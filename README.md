@@ -4,6 +4,38 @@
 
 SisDit es una plataforma web desarrollada para la Dirección de Planeación y Desarrollo Urbano del Municipio de Rincón de Romos, Aguascalientes, México. El sistema facilita la gestión digital de trámites urbanos, permitiendo el registro, consulta y seguimiento de procedimientos de planeación territorial de manera eficiente y transparente.
 
+## Capturas de Pantalla
+
+### Página Principal
+![Página Principal](screenshots/pagina-principal.png)
+*Vista principal del sistema con información general y acceso*
+
+### Dashboard de Administrador
+![Dashboard Administrador](screenshots/dashboard-admin.png)
+*Panel de control completo con estadísticas y gestión de usuarios*
+
+### Dashboard de Verificador
+![Dashboard Verificador](screenshots/dashboard-verificador.png)
+*Interfaz para revisión y aprobación de trámites georreferenciados*
+
+### Dashboard de Ventanilla
+![Dashboard Ventanilla](screenshots/dashboard-ventanilla.png)
+*Gestión de trámites nuevos, correcciones y constancias*
+
+### Formulario de Nuevo Trámite
+![Nuevo Trámite](screenshots/nuevo-tramite.png)
+*Registro de trámite con mapa georreferenciado integrado*
+
+### Ficha de Ingreso
+![Ficha de Ingreso](screenshots/ficha-ingreso.png)
+*Documento oficial imprimible generado por el sistema*
+
+### Constancia de Número Oficial
+![Constancia Número](screenshots/constancia-numero.png)
+*Certificado oficial con croquis y datos del predio*
+
+> **Nota**: Las capturas de pantalla deben colocarse en la carpeta `screenshots/` con los nombres especificados. Para generar las imágenes, acceder al sistema y tomar screenshots de cada sección mencionada.
+
 ## Características Principales
 
 ### Gestión de Trámites
@@ -205,10 +237,10 @@ Municipio de Rincón de Romos, Aguascalientes
 
 **Desarrollador**: 
 Este proyecto fue desarrollado por alumn@s de estadias de la Universidad Tecnologica del Norte UTNA
--
--
--
--
+- ELENA NATALIA DIOSDADO ARELLANO
+- CRISTELL ALEJANDRA ROBLEDO VERA
+- WENDY JULIANA MEDINA ROSALES
+- ESTHELA GUADALUPE MACIAS RUIZ
 ---
 
 *Sistema desarrollado para fortalecer la planeación urbana, la transparencia y la toma de decisiones municipales.*
