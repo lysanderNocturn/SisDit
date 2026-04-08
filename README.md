@@ -34,7 +34,6 @@ SisDit es una plataforma web desarrollada para la Dirección de Planeación y De
 ![Constancia Número](screenshots/constancia-numero.png)
 *Certificado oficial con croquis y datos del predio*
 
-> **Nota**: Las capturas de pantalla deben colocarse en la carpeta `screenshots/` con los nombres especificados. Para generar las imágenes, acceder al sistema y tomar screenshots de cada sección mencionada.
 
 ## Características Principales
 
