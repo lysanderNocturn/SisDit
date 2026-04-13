@@ -10,9 +10,16 @@ if (!isset($_SESSION['rol']) || !in_array($_SESSION['rol'], ['Ventanilla', 'Admi
 require_once "php/db.php";
 
 // ── Estadísticas ──
-$total_correccion  = $conn->query("SELECT COUNT(*) as c FROM tramites WHERE estatus = 'En corrección'")->fetch_assoc()['c'];
-$total_revision    = $conn->query("SELECT COUNT(*) as c FROM tramites WHERE estatus = 'En revisión'")->fetch_assoc()['c'];
-$total_todos       = $conn->query("SELECT COUNT(*) as c FROM tramites")->fetch_assoc()['c'];
+$stats = $conn->query("
+    SELECT
+        SUM(CASE WHEN estatus = 'En corrección' THEN 1 ELSE 0 END) AS correccion,
+        SUM(CASE WHEN estatus = 'En revisión' THEN 1 ELSE 0 END) AS revision,
+        COUNT(*) AS total
+    FROM tramites
+")->fetch_assoc();
+$total_correccion = $stats['correccion'];
+$total_revision = $stats['revision'];
+$total_todos = $stats['total'];
 
 // ── Reporte (igual que DashAdmin) ──
 $anio_filtro = isset($_GET['anio_reporte']) ? (int)$_GET['anio_reporte'] : (int)date('Y');
@@ -21,8 +28,13 @@ $anios_disponibles = [];
 while ($ar = $anios_res->fetch_assoc()) $anios_disponibles[] = $ar['folio_anio'];
 if (empty($anios_disponibles)) $anios_disponibles[] = (int)date('Y');
 
-$gran_total  = (int)$conn->query("SELECT COUNT(*) as c FROM tramites WHERE folio_anio=$anio_filtro")->fetch_assoc()['c'];
-$total_global = (int)$conn->query("SELECT COUNT(*) as c FROM tramites")->fetch_assoc()['c'];
+$totals = $conn->query("
+    SELECT
+        (SELECT COUNT(*) FROM tramites WHERE folio_anio=$anio_filtro) AS gran_total,
+        (SELECT COUNT(*) FROM tramites) AS total_global
+")->fetch_assoc();
+$gran_total = (int)$totals['gran_total'];
+$total_global = (int)$totals['total_global'];
 
 $reporte_mes = $conn->query("
     SELECT MONTH(fecha_ingreso) AS mes,
@@ -134,60 +146,22 @@ $seg_res = $stmtSeg->get_result();
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css"/>
+
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
 <link rel="stylesheet" href="./css/style.css?v=1">
 <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.7.5/proj4.js"></script>
 <script>
 history.pushState(null,null,location.href);
 window.onpopstate=function(){history.go(1);};
 </script>
-<style>
-:root{--vino:#7b0f2b;--vino-oscuro:#5e0b20;}
-body{background:#f4f6f9;font-family:'Segoe UI',sans-serif;}
-.sidebar{width:240px;height:100vh;position:fixed;top:0;left:0;
-  background:linear-gradient(180deg,var(--vino),var(--vino-oscuro));
-  color:white;padding:20px;z-index:1000;overflow-y:auto;
-  box-shadow:4px 0 20px rgba(0,0,0,.15);display:flex;flex-direction:column;}
-.sidebar h5{text-align:center;font-weight:700;margin-bottom:24px;}
-.sidebar a{color:rgba(255,255,255,.85);display:block;padding:8px 12px;
-  border-radius:6px;margin-bottom:4px;text-decoration:none;transition:background .2s;}
-.sidebar a:hover{background:rgba(255,255,255,.15);color:white;}
-.sidebar a.active{background:rgba(255,255,255,.22);color:white;font-weight:600;}
-.content{margin-left:240px;padding:30px;}
-@media(max-width:991px){.sidebar{display:none!important;}.content{margin-left:0;padding:15px;}}
-.hero{background:linear-gradient(135deg,var(--vino),var(--vino-oscuro));color:white;
-  border-radius:12px;padding:28px 32px;margin-bottom:28px;}
-.hero h1{font-size:1.5rem;font-weight:700;margin-bottom:6px;}
-.tramite-box{background:#fff;border-radius:12px;padding:24px;
-  box-shadow:0 2px 12px rgba(0,0,0,.07);margin-bottom:24px;}
-.tramite-selector-card:hover{border-color:var(--vino)!important;
-  box-shadow:0 4px 16px rgba(123,15,43,.15);transform:translateY(-2px);}
-#mapa{height:380px;border-radius:12px;}
-/* Corregir overlay transparente en el hero */
-.hero {
-    position: relative;
-    z-index: 1;
-}
-
-/* Eliminar cualquier pseudo-elemento que pueda estar creando el overlay */
-.hero::before {
-    display: none !important;
-    content: none !important;
-}
-
-/* Asegurar que el texto sea completamente visible */
-.hero h1, 
-.hero p,
-.hero strong,
-.hero * {
-    position: relative;
-    z-index: 2;
-    color: white !important;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
-}
-</style>
+<link rel="stylesheet" href="css/dashVentanilla.css">
 </head>
 <body>
 
@@ -226,6 +200,7 @@ body{background:#f4f6f9;font-family:'Segoe UI',sans-serif;}
     <?php endif; ?>
   </a>
   <a href="#tramite"><i class="bi bi-plus-circle me-2"></i>Nuevo Trámite</a>
+  <a class="nav-link text-white" href="#mapa"><i class="bi bi-map me-2"></i> Mapa</a>
   <a href="#correccion"><i class="bi bi-pencil-square me-2"></i>En Corrección
     <?php if($total_correccion>0): ?>
     <span class="badge bg-warning text-dark ms-1"><?= $total_correccion ?></span>
@@ -615,22 +590,29 @@ data-folio-salida-anio="<?= $av['folio_salida_anio'] ?>"
     <p class="text-muted mb-4">Seleccione el tipo de trámite para ver los requisitos y continuar con el registro.</p>
     <div class="row g-3 mb-4">
       <?php
-      $tipos_q = $conn->prepare("SELECT id, codigo, nombre, descripcion FROM tipos_tramite WHERE activo=1 ORDER BY nombre");
+      $tipos_q = $conn->prepare("SELECT id, codigo, nombre, descripcion FROM tipos_tramite WHERE activo=1 ORDER BY ID");
       $tipos_q->execute();
       $tipos_r = $tipos_q->get_result();
       $iconos = [
-        'NUM_OFICIAL'  => ['icon'=>'bi-123',                  'color'=>'#0d6efd'],
-        'CMCU'         => ['icon'=>'bi-building-check',       'color'=>'#198754'],
-        'FUSION'       => ['icon'=>'bi-union',                'color'=>'#fd7e14'],
-        'SUBDIVISION'  => ['icon'=>'bi-subtract',             'color'=>'#6610f2'],
-        'INFORME_CU'   => ['icon'=>'bi-file-earmark-bar-graph','color'=>'#0dcaf0'],
+        'NUM_OFICIAL'  => ['icon'=>'bi-123',                  'color'=>'#0d6efd'], // 1
+        'CMCU'         => ['icon'=>'bi-building-check',       'color'=>'#198754'], // 2
+        'FUSION'       => ['icon'=>'bi-union',                'color'=>'#fd7e14'], // 3
+        'SUBDIVISION'  => ['icon'=>'bi-subtract',             'color'=>'#6610f2'], // 4
+        'INFORME_CU'   => ['icon'=>'bi-file-earmark-bar-graph','color'=>'#0dcaf0'], // 5
+        'USO_SUELO'    => ['icon'=>'bi-diagram-3',            'color'=>'#6f42c1'], // 6
+        'LIC_CONST' => ['icon'=>'bi-building',             'color'=>'#dc3545'], // 7
+        'ANUNCIOS'      => ['icon'=>'bi-megaphone',            'color'=>'#dc3545'], // 8
+
       ];
       $requisitosInfo = [
         1 => ['docs'=>['INE o Pasaporte','Boleta Predial Vigente','Título de Propiedad o Escritura'],'nota'=>''],
-        2 => ['docs'=>['INE o Pasaporte','Boleta Predial Vigente','Título de Propiedad o Escritura','Formato de Constancia'],'nota'=>'Predios >10,000m² requieren levantamiento topográfico catastral.'],
-        3 => ['docs'=>['INE o Pasaporte','Boleta Predial Vigente','Título de Propiedad o Escritura'],'nota'=>''],
+        2 => ['docs'=>['INE o Pasaporte','Boleta Predial Vigente','Título de Propiedad o Escritura','Formato de Constancia'],'nota'=>'Si es comercial se requiere contrato de arrendamiento y medidas de superficie.'],
+        3 => ['docs'=>['INE o Pasaporte','Boleta Predial Vigente','Título de Propiedad o Escritura'],'nota'=>'Si es mas de 10,000 m2 se requiere levantamiento topográfico.'],
         4 => ['docs'=>['INE o Pasaporte','Boleta Predial Vigente','Título de Propiedad o Escritura'],'nota'=>''],
         5 => ['docs'=>['INE o Pasaporte','Cuenta Catastral del Predio'],'nota'=>''],
+        6 => ['docs'=>['INE o Pasaporte','Boleta Predial Vigente','Título de Propiedad o Escritura'],'nota'=>''],
+        7 => ['docs'=>['INE o Pasaporte','Boleta Predial Vigente','Título de Propiedad o Escritura'],'nota'=>''],
+        8 => ['docs'=>['INE o Pasaporte','Boleta Predial Vigente','Contrato de Arrendamiento o Escritura'],'nota'=>'Se requiere memoria descriptiva o calculo de superficie, si es Empresa se requiere Poder Notariado y Acta Constitutiva.'],
       ];
       $tiposList = [];
       while($tp=$tipos_r->fetch_assoc()) $tiposList[]=$tp;
@@ -762,8 +744,18 @@ data-folio-salida-anio="<?= $av['folio_salida_anio'] ?>"
       <div class="row">
         <div class="col-md-3 mb-3">
           <label class="form-label">Cuenta Catastral <span class="badge bg-success ms-1" style="font-size:.65rem;">Auto</span></label>
-          <input type="text" class="form-control" name="cuenta_catastral" id="cuenta_catastral"
-            placeholder="Automática si se deja vacía" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+          <div class="input-group">
+            <input type="text" class="form-control" name="cuenta_catastral" id="cuenta_catastral"
+                                    inputmode="numeric"
+                                    placeholder="Ingrese cuenta para buscar"
+                                    oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+            <button type="button" class="btn btn-primary" id="btnBuscarCuenta">
+              <i class="bi bi-search"></i>
+            </button>
+          </div>
+          <small class="text-muted">
+            <i class="bi bi-info-circle me-1"></i>Solo números. Escriba y presione buscar o clic en mapa.
+          </small>
         </div>
         <div class="col-md-3 mb-3">
           <label class="form-label">Superficie</label>
@@ -771,11 +763,11 @@ data-folio-salida-anio="<?= $av['folio_salida_anio'] ?>"
         </div>
         <div class="col-md-3 mb-3">
           <label class="form-label">UTM X (Este)</label>
-          <input type="text" class="form-control" name="lat" id="lat" placeholder="Ej: 284500.00">
+          <input type="text" class="form-control" name="lat" id="lat" placeholder="Ej: 284500.00" readonly>
         </div>
         <div class="col-md-3 mb-3">
           <label class="form-label">UTM Y (Norte)</label>
-          <input type="text" class="form-control" name="lng" id="lng" placeholder="Ej: 2460500.00">
+          <input type="text" class="form-control" name="lng" id="lng" placeholder="Ej: 2460500.00" readonly>
         </div>
       </div>
       <div class="alert alert-info"><i class="bi bi-cursor me-2"></i><strong>Tip:</strong> Haz clic en el mapa para capturar las coordenadas UTM del predio.</div>
@@ -840,12 +832,32 @@ data-folio-salida-anio="<?= $av['folio_salida_anio'] ?>"
             <input type="file" class="form-control" name="escritura" accept=".pdf,.jpg,.jpeg,.png">
             <small class="text-muted">PDF, JPG, PNG (Max. 5MB)</small>
           </div>
-          <div class="col-md-4 mb-4" id="grupo-formato_constancia" style="display:none;">
-            <label class="form-label fw-bold"><i class="bi bi-file-earmark-ruled me-1"></i>Formato de Constancia</label>
-            <input type="file" class="form-control" name="formato_constancia" accept=".pdf,.jpg,.jpeg,.png">
-            <small class="text-muted">PDF, JPG, PNG (Max. 5MB)</small>
-          </div>
-        </div>
+           <div class="col-md-4 mb-4" id="grupo-formato_constancia" style="display:none;">
+             <label class="form-label fw-bold"><i class="bi bi-file-earmark-ruled me-1"></i>Formato de Constancia</label>
+             <input type="file" class="form-control" name="formato_constancia" accept=".pdf,.jpg,.jpeg,.png">
+             <small class="text-muted">PDF, JPG, PNG (Max. 5MB)</small>
+           </div>
+           <div class="col-md-4 mb-4" id="grupo-contrato_arrendamiento" style="display:none;">
+             <label class="form-label fw-bold"><i class="bi bi-file-earmark-text me-1"></i>Contrato de Arrendamiento o Escritura</label>
+             <input type="file" class="form-control" name="contrato_arrendamiento" accept=".pdf,.jpg,.jpeg,.png">
+             <small class="text-muted">PDF, JPG, PNG (Max. 5MB)</small>
+           </div>
+           <div class="col-md-4 mb-4" id="grupo-memoria_descriptiva" style="display:none;">
+             <label class="form-label fw-bold"><i class="bi bi-file-earmark-ruled me-1"></i>Memoria Descriptiva / Cálculo de Superficie</label>
+             <input type="file" class="form-control" name="memoria_descriptiva" accept=".pdf,.jpg,.jpeg,.png">
+             <small class="text-muted">PDF, JPG, PNG (Max. 5MB)</small>
+           </div>
+           <div class="col-md-4 mb-4" id="grupo-poder_notariado" style="display:none;">
+             <label class="form-label fw-bold"><i class="bi bi-file-earmark-person me-1"></i>Poder Notariado <small class="text-muted">(opcional para empresas)</small></label>
+             <input type="file" class="form-control" name="poder_notariado" accept=".pdf,.jpg,.jpeg,.png">
+             <small class="text-muted">PDF, JPG, PNG (Max. 5MB)</small>
+           </div>
+           <div class="col-md-4 mb-4" id="grupo-acta_constitutiva" style="display:none;">
+             <label class="form-label fw-bold"><i class="bi bi-building me-1"></i>Acta Constitutiva <small class="text-muted">(opcional para empresas)</small></label>
+             <input type="file" class="form-control" name="acta_constitutiva" accept=".pdf,.jpg,.jpeg,.png">
+             <small class="text-muted">PDF, JPG, PNG (Max. 5MB)</small>
+           </div>
+         </div>
         <div class="mt-2 p-3 border rounded" style="background:#fffbf0;">
           <label class="form-label fw-bold text-warning-emphasis"><i class="bi bi-chat-left-text me-1"></i>Comentarios / Justificación de documentos faltantes</label>
           <textarea name="comentario_sin_doc" class="form-control" rows="3" placeholder="Ej: El solicitante no presenta INE porque tramita con carta poder..."></textarea>
@@ -923,6 +935,10 @@ data-folio-salida-anio="<?= $av['folio_salida_anio'] ?>"
         $tescritura  = isset($t['escrituras_archivo'])  ? $t['escrituras_archivo']  : (isset($t['titulo_archivo']) ? $t['titulo_archivo'] : '');
         $tpredial    = isset($t['predial_archivo'])     ? $t['predial_archivo']     : '';
         $tformato    = isset($t['formato_constancia'])  ? $t['formato_constancia']  : '';
+        $tcontrato   = isset($t['contrato_arrendamiento_archivo']) ? $t['contrato_arrendamiento_archivo'] : '';
+        $tmemoria    = isset($t['memoria_descriptiva_archivo'])    ? $t['memoria_descriptiva_archivo']    : '';
+        $tpoder      = isset($t['poder_notariado_archivo'])        ? $t['poder_notariado_archivo']        : '';
+        $tacta       = isset($t['acta_constitutiva_archivo'])      ? $t['acta_constitutiva_archivo']      : '';
         $tfoto1      = isset($t['foto1_archivo'])       ? $t['foto1_archivo']       : '';
         $tfoto2      = isset($t['foto2_archivo'])       ? $t['foto2_archivo']       : '';
       ?>
@@ -949,6 +965,10 @@ data-folio-salida-anio="<?= $av['folio_salida_anio'] ?>"
               data-escritura="<?= htmlspecialchars($tescritura) ?>"
               data-predial="<?= htmlspecialchars($tpredial) ?>"
               data-formato="<?= htmlspecialchars($tformato) ?>"
+              data-contrato="<?= htmlspecialchars($tcontrato) ?>"
+              data-memoria="<?= htmlspecialchars($tmemoria) ?>"
+              data-poder="<?= htmlspecialchars($tpoder) ?>"
+              data-acta="<?= htmlspecialchars($tacta) ?>"
               data-foto1="<?= htmlspecialchars($tfoto1) ?>"
               data-foto2="<?= htmlspecialchars($tfoto2) ?>"
               data-tipo-tramite-id="<?= (int)$t['tipo_tramite_id'] ?>"
@@ -1035,6 +1055,7 @@ data-folio-salida-anio="<?= $av['folio_salida_anio'] ?>"
         $tfoto1      = isset($t['foto1_archivo'])       ? $t['foto1_archivo']       : '';
         $tfoto2      = isset($t['foto2_archivo'])       ? $t['foto2_archivo']       : '';
         $estatus     = $t['estatus'];
+        $fecha       = date('d/m/Y', strtotime($t['created_at']));
         if ($estatus === 'En revisión')              $badge = 'bg-warning text-dark';
         elseif ($estatus === 'Aprobado por Verificador') $badge = 'bg-info text-dark';
         elseif ($estatus === 'Aprobado')             $badge = 'bg-success';
@@ -1043,13 +1064,17 @@ data-folio-salida-anio="<?= $av['folio_salida_anio'] ?>"
         else                                         $badge = 'bg-secondary';
       ?>
         <tr>
-          <td>1</td>
-          <td>2</td>
-          <td>3</td>
-          <td>4</td>
-          <td>5</td>
-          <td>6</td>
-          <td>7</td>
+          <td><span class="badge bg-primary"><?= htmlspecialchars($folio) ?></span></td>
+          <td><?= $folio_sal_s ? '<span class="badge bg-success">'.htmlspecialchars($folio_sal_s).'</span>' : '<span class="text-muted">—</span>' ?></td>
+          <td><?= htmlspecialchars($t['propietario']) ?></td>
+          <td><?= htmlspecialchars($tnombre) ?></td>
+          <td><?= htmlspecialchars($fecha) ?></td>
+          <td><span class="badge <?= $badge ?>"><?= htmlspecialchars($estatus) ?></span></td>
+          <td class="text-center">
+            <a href="ficha.php?folio=<?= urlencode($folio) ?>" target="_blank" class="btn btn-sm btn-outline-info" title="Ver ficha completa">
+              <i class="bi bi-eye"></i> Ver
+            </a>
+          </td>
         </tr>
       <?php endwhile; endif; ?>
       </tbody>
@@ -1100,15 +1125,24 @@ data-folio-salida-anio="<?= $av['folio_salida_anio'] ?>"
                     $folio_url = urlencode($tr['folio_formateado']);
                 ?>
                 <tr>
-                    <td>1</td>
-                    <td>2</td>
-                    <td>3</td>
-                    <td>4</td>
-                    <td>5</td>
-                    <td>6</td>
-                    <td>7</td>
-                    <td>8</td>
-                    <td>9</td>
+                    <td><span class="badge bg-success"><?php echo $folio_ing; ?></span></td>
+                    <td><?php echo $folio_sal ? '<span class="badge bg-primary">' . htmlspecialchars($folio_sal) . '</span>' : '<span class="text-muted">—</span>'; ?></td>
+                    <td><?php echo htmlspecialchars($tr['tipo_tramite_nombre'] ?? '—'); ?></td>
+                    <td><?php echo htmlspecialchars($tr['propietario']); ?></td>
+                    <td><?php echo htmlspecialchars(trim(($tr['solicitante_nombre'] ?? '') . ' ' . ($tr['solicitante_apellidos'] ?? ''))); ?></td>
+                    <td><?php echo htmlspecialchars($tr['direccion'] ?? '—'); ?></td>
+                    <td><?php echo htmlspecialchars($tr['numero_asignado'] ?? '—'); ?></td>
+                    <td><?php echo $tr['fecha_aprobacion'] ? date('d/m/Y', strtotime($tr['fecha_aprobacion'])) : '—'; ?></td>
+                    <td class="text-center">
+                        <button class="btn btn-sm btn-success btn-reimprimir"
+                            data-folio="<?php echo $folio_ing; ?>"
+                            data-folio-salida-numero="<?php echo $tr['folio_salida_numero'] ?? ''; ?>"
+                            data-folio-salida-anio="<?php echo $tr['folio_salida_anio'] ?? ''; ?>"
+                            data-bs-toggle="modal" data-bs-target="#modalConstanciaSec"
+                            title="Reimprimir constancia">
+                            <i class="bi bi-printer me-1"></i>Imprimir
+                        </button>
+                    </td>
                 </tr>
                 <?php endwhile; ?>
                 <?php endif; ?>
@@ -1418,11 +1452,27 @@ data-folio-salida-anio="<?= $av['folio_salida_anio'] ?>"
                 <span><i class="bi bi-file-earmark-text me-2 text-primary"></i>Boleta Predial</span>
                 <span class="badge bg-primary">Ver</span>
               </a>
-              <a id="sec_doc_formato" href="#" target="_blank" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" style="display:none!important;">
-                <span><i class="bi bi-file-earmark-ruled me-2 text-primary"></i>Formato de Constancia</span>
-                <span class="badge bg-primary">Ver</span>
-              </a>
-            </div>
+               <a id="sec_doc_formato" href="#" target="_blank" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" style="display:none!important;">
+                 <span><i class="bi bi-file-earmark-ruled me-2 text-primary"></i>Formato de Constancia</span>
+                 <span class="badge bg-primary">Ver</span>
+               </a>
+               <a id="sec_doc_contrato_arrendamiento" href="#" target="_blank" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" style="display:none!important;">
+                 <span><i class="bi bi-file-earmark-text me-2 text-primary"></i>Contrato de Arrendamiento o Escritura</span>
+                 <span class="badge bg-primary">Ver</span>
+               </a>
+               <a id="sec_doc_memoria_descriptiva" href="#" target="_blank" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" style="display:none!important;">
+                 <span><i class="bi bi-file-earmark-ruled me-2 text-primary"></i>Memoria Descriptiva / Cálculo de Superficie</span>
+                 <span class="badge bg-primary">Ver</span>
+               </a>
+               <a id="sec_doc_poder_notariado" href="#" target="_blank" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" style="display:none!important;">
+                 <span><i class="bi bi-file-earmark-person me-2 text-primary"></i>Poder Notariado <small class="text-muted">(opcional para empresas)</small></span>
+                 <span class="badge bg-primary">Ver</span>
+               </a>
+               <a id="sec_doc_acta_constitutiva" href="#" target="_blank" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" style="display:none!important;">
+                 <span><i class="bi bi-building me-2 text-primary"></i>Acta Constitutiva <small class="text-muted">(opcional para empresas)</small></span>
+                 <span class="badge bg-primary">Ver</span>
+               </a>
+             </div>
             <p id="sec_sin_docs" class="text-muted small fst-italic" style="display:none;">Sin documentos cargados.</p>
           </div>
 
@@ -1444,13 +1494,29 @@ data-folio-salida-anio="<?= $av['folio_salida_anio'] ?>"
                   <label class="form-label fw-semibold small">Boleta Predial</label>
                   <input type="file" name="predial" class="form-control form-control-sm" accept="image/*,.pdf">
                 </div>
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold small">Formato de Constancia</label>
-                  <input type="file" name="formato_constancia" class="form-control form-control-sm" accept="image/*,.pdf">
-                </div>
-              </div>
-            </div>
-          </div>
+                 <div class="col-md-6">
+                   <label class="form-label fw-semibold small">Formato de Constancia</label>
+                   <input type="file" name="formato_constancia" class="form-control form-control-sm" accept="image/*,.pdf">
+                 </div>
+                 <div class="col-md-6">
+                   <label class="form-label fw-semibold small">Contrato de Arrendamiento o Escritura</label>
+                   <input type="file" name="contrato_arrendamiento" class="form-control form-control-sm" accept="image/*,.pdf">
+                 </div>
+                 <div class="col-md-6">
+                   <label class="form-label fw-semibold small">Memoria Descriptiva / Cálculo de Superficie</label>
+                   <input type="file" name="memoria_descriptiva" class="form-control form-control-sm" accept="image/*,.pdf">
+                 </div>
+                 <div class="col-md-6" id="sec_grupo_poder_notariado" style="display:none;">
+                   <label class="form-label fw-semibold small">Poder Notariado <small class="text-muted">(opcional para empresas)</small></label>
+                   <input type="file" name="poder_notariado" class="form-control form-control-sm" accept="image/*,.pdf">
+                 </div>
+                 <div class="col-md-6" id="sec_grupo_acta_constitutiva" style="display:none;">
+                   <label class="form-label fw-semibold small">Acta Constitutiva <small class="text-muted">(opcional para empresas)</small></label>
+                   <input type="file" name="acta_constitutiva" class="form-control form-control-sm" accept="image/*,.pdf">
+                 </div>
+               </div>
+             </div>
+           </div>
 
           <div class="card border-secondary mb-3">
             <div class="card-header bg-secondary text-white fw-bold">
@@ -1562,947 +1628,7 @@ data-folio-salida-anio="<?= $av['folio_salida_anio'] ?>"
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.7.5/proj4.js"></script>
-<script>
-// ── MAPA ──
-proj4.defs('EPSG:32613','+proj=utm +zone=13 +datum=WGS84 +units=m +no_defs');
-const CENTRO=[22.228,-102.322];
-const map=L.map('mapa',{zoomControl:true,scrollWheelZoom:true}).setView(CENTRO,14);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map);
-setTimeout(()=>map.invalidateSize(),300);
-setTimeout(()=>map.invalidateSize(),800);
-let marker;
-function centrarMapa(){map.setView(CENTRO,14);}
-map.on('click',e=>{
-  const lat=e.latlng.lat.toFixed(5),lon=e.latlng.lng.toFixed(5);
-  const utm=proj4('EPSG:4326','EPSG:32613',[parseFloat(lon),parseFloat(lat)]);
-  document.getElementById('lat').value=utm[0].toFixed(2);
-  document.getElementById('lng').value=utm[1].toFixed(2);
-  document.getElementById('coords-display').classList.remove('d-none');
-  document.getElementById('coords-texto').textContent=`UTM X: ${utm[0].toFixed(2)} | UTM Y: ${utm[1].toFixed(2)}`;
-  if(marker) marker.setLatLng(e.latlng); else marker=L.marker(e.latlng).addTo(map);
-});
-
-// Buscar catastral
-let catTimeout;
-document.getElementById('cuenta_catastral')?.addEventListener('input',function(){
-  clearTimeout(catTimeout);
-  const v=this.value.trim();
-  catTimeout=setTimeout(()=>{
-    if(v.length<3) return;
-    fetch('php/buscar_catastral.php?cuenta='+encodeURIComponent(v))
-    .then(r=>r.json()).then(d=>{
-      if(d&&d.utm_x&&d.utm_y){
-        document.getElementById('lat').value=parseFloat(d.utm_x).toFixed(2);
-        document.getElementById('lng').value=parseFloat(d.utm_y).toFixed(2);
-        const ll=proj4('EPSG:32613','EPSG:4326',[parseFloat(d.utm_x),parseFloat(d.utm_y)]);
-        const pt=L.latLng(ll[1],ll[0]);
-        map.setView(pt,18);
-        if(marker) map.removeLayer(marker);
-        marker=L.marker(pt).addTo(map);
-      }
-    }).catch(()=>{});
-  },600);
-});
-
-// ── MAYÚSCULAS ──
-document.querySelectorAll('.mayusculas').forEach(i=>{
-  i.addEventListener('input',function(){
-    const p=this.selectionStart;
-    this.value=this.value.toUpperCase().replace(/[^A-ZÁÉÍÓÚÜÑ0-9\s\.,#\/\-]/gi,'');
-    try{this.setSelectionRange(p,p);}catch(e){}
-  });
-  i.addEventListener('blur',function(){this.value=this.value.toUpperCase().trim();});
-});
-
-// ── FECHAS ──
-const hoy=new Date(),yyyy=hoy.getFullYear(),mm=String(hoy.getMonth()+1).padStart(2,'0'),dd=String(hoy.getDate()).padStart(2,'0');
-document.getElementById('fechaIngreso').value=`${yyyy}-${mm}-${dd}`;
-function calcDiasHabiles(f,n){const d=new Date(f+'T00:00:00');let c=0;while(c<n){d.setDate(d.getDate()+1);if(d.getDay()!==0&&d.getDay()!==6)c++;}return d.toISOString().split('T')[0];}
-function actFechaEntrega(){const v=document.getElementById('fechaIngreso').value;if(v)document.getElementById('fechaEntrega').value=calcDiasHabiles(v,10);}
-actFechaEntrega();
-document.getElementById('fechaIngreso').addEventListener('change',actFechaEntrega);
-
-// ── SELECCIÓN DE TRÁMITE ──
-const reqPorTramite={
-  1:{titulo:'Constancia de Número Oficial',documentos:['ine','escritura','predial'],nota:''},
-  2:{titulo:'Constancia de Compatibilidad Urbanística',documentos:['ine','escritura','predial','formato_constancia'],nota:'Predios <10,000m²: plano catastral. Mayores: levantamiento topográfico.'},
-  3:{titulo:'Fusión de Predios',documentos:['ine','escritura','predial'],nota:''},
-  4:{titulo:'Subdivisión de Predio',documentos:['ine','escritura','predial'],nota:''},
-  5:{titulo:'Informe CU',documentos:['ine'],nota:'Requiere cuenta catastral.'}
-};
-const labelsDoc={'ine':'INE o Pasaporte','escritura':'Escritura / Título','predial':'Boleta Predial Vigente','formato_constancia':'Formato de Constancia'};
-function seleccionarTramite(id,nombre){
-  document.getElementById('tipo_tramite_id_hidden').value=id;
-  document.getElementById('tipo_tramite_id').value=id;
-  document.getElementById('label-tipo-tramite-form').textContent=nombre;
-  document.getElementById('titulo-tramite-paso2').textContent=nombre;
-  const t=reqPorTramite[id];
-  if(t){
-    let h=t.documentos.map(d=>`<div><i class="bi bi-check2-circle me-2 text-success"></i>${labelsDoc[d]||d}</div>`).join('');
-    if(t.nota)h+=`<div class="mt-1 text-warning"><i class="bi bi-exclamation-triangle me-2"></i>${t.nota}</div>`;
-    document.getElementById('lista-req-recordatorio').innerHTML=h;
-    actualizarReqs(id);
-  }
-  document.getElementById('paso1-seleccion').style.display='none';
-  document.getElementById('paso2-formulario').style.display='block';
-  document.getElementById('tramite').scrollIntoView({behavior:'smooth',block:'start'});
-}
-function volverSeleccion(){
-  document.getElementById('paso2-formulario').style.display='none';
-  document.getElementById('paso1-seleccion').style.display='block';
-  document.getElementById('tramite').scrollIntoView({behavior:'smooth',block:'start'});
-}
-function actualizarReqs(id){
-  const sec=document.getElementById('seccion-documentos');
-  document.querySelectorAll('[id^="grupo-"]').forEach(g=>{g.style.display='none';});
-  if(!id||!reqPorTramite[id]){sec.style.display='none';return;}
-  const t=reqPorTramite[id];
-  sec.style.display='block';
-  document.getElementById('titulo-tramite-seleccionado').textContent=t.titulo;
-  document.getElementById('lista-requisitos').innerHTML=t.documentos.map(d=>`<li class="list-group-item d-flex align-items-center"><i class="bi bi-check-circle text-success me-2"></i>${labelsDoc[d]||d}</li>`).join('');
-  t.documentos.forEach(d=>{const g=document.getElementById('grupo-'+d);if(g)g.style.display='block';});
-}
-
-// ── MODAL CORRECCIÓN: poblar ──
-document.querySelectorAll('.btn-editar-correccion').forEach(btn=>{
-  btn.addEventListener('click',()=>{
-    const d=btn.dataset;
-    document.getElementById('sec_folio').textContent=d.folio;
-    document.getElementById('sec_folio_hidden').value=d.folio;
-    document.getElementById('sec_propietario').textContent=d.propietario;
-    document.getElementById('sec_solicitante').textContent=d.solicitante||'—';
-    document.getElementById('sec_direccion').textContent=d.direccion;
-    document.getElementById('sec_tramite').textContent=d.tramite;
-    document.getElementById('sec_fecha').textContent=d.fecha;
-    document.getElementById('sec_telefono').textContent=d.telefono||'—';
-    document.getElementById('sec_correo').textContent=d.correo||'—';
-    document.getElementById('sec_tipo_tramite_id').value=d.tipoTramiteId||'';
-    document.getElementById('sec_nota').value='';
-    document.getElementById('sec_observaciones').textContent=d.observaciones||'Sin indicaciones del verificador.';
-    
-    // CORRECCIÓN: Manejo de documentos
-    const docs = {
-      sec_doc_ine: d.ine,
-      sec_doc_escritura: d.escritura,
-      sec_doc_predial: d.predial,
-      sec_doc_formato: d.formato
-    };
-    
-    let hayDocs = false;
-    Object.entries(docs).forEach(([id, val]) => {
-      const el = document.getElementById(id);
-      if (el) {
-        if (val && val.trim() && val !== 'null' && val !== 'undefined') {
-          // Documento existe: mostrar y habilitar enlace
-          el.href = 'uploads/' + val;
-          el.style.display = 'flex';
-          el.style.removeProperty('display');
-          hayDocs = true;
-          // Quitar cualquier clase que lo oculte
-          el.classList.remove('d-none');
-        } else {
-          // Documento NO existe: ocultar completamente
-          el.style.display = 'none';
-          el.classList.add('d-none');
-        }
-      }
-    });
-    
-    // Mostrar mensaje si no hay documentos
-    const sinDocsEl = document.getElementById('sec_sin_docs');
-    if (sinDocsEl) {
-      sinDocsEl.style.display = hayDocs ? 'none' : 'block';
-    }
-    
-    // Manejo de fotografías
-    ['1','2'].forEach(n => {
-      const val = d['foto' + n];
-      const prev = document.getElementById('sec_prev' + n);
-      const cont = document.getElementById('sec_prev' + n + '_container');
-      const input = document.getElementById('sec_input_foto' + n);
-      
-      if (prev && cont) {
-        if (val && val.trim() && val !== 'null' && val !== 'undefined') {
-          prev.src = 'uploads/' + val;
-          cont.style.display = 'block';
-          cont.style.removeProperty('display');
-        } else {
-          prev.src = '';
-          cont.style.display = 'none';
-        }
-      }
-      if (input) input.value = '';
-    });
-    
-    document.getElementById('sec_btn_ficha').href = 'ficha.php?folio=' + d.folio;
-  });
-});
-
-// Preview fotos corrección
-['1','2'].forEach(n=>{
-  document.getElementById('sec_input_foto'+n)?.addEventListener('change',function(e){
-    const f=e.target.files[0];
-    if(f&&f.type.startsWith('image/')){
-      const r=new FileReader();
-      r.onload=ev=>{document.getElementById('sec_prev'+n).src=ev.target.result;document.getElementById('sec_prev'+n+'_container').style.display='block';};
-      r.readAsDataURL(f);
-    }
-  });
-});
-
-// ── GUARDAR CORRECCIÓN ──
-let _pendingNotif=null;
-document.getElementById('formVentanilla')?.addEventListener('submit',function(e){
-  e.preventDefault();
-  Swal.fire({
-    title:'¿Guardar cambios?',
-    html:'El trámite regresará a <strong>En revisión</strong>.',
-    icon:'question',showCancelButton:true,
-    confirmButtonText:'Sí, guardar',cancelButtonText:'Cancelar',
-    confirmButtonColor:'#7b0f2b',cancelButtonColor:'#6c757d'
-  }).then(r=>{
-    if(!r.isConfirmed) return;
-    fetch('php/actualizarTramite.php',{method:'POST',body:new FormData(this),credentials:'same-origin'})
-    .then(res=>{if(!res.ok)return res.text().then(t=>{throw new Error(t.substring(0,200));});return res.json();})
-    .then(data=>{
-      if(data.success){_pendingNotif=data;bootstrap.Modal.getInstance(document.getElementById('modalEditar'))?.hide();}
-      else Swal.fire({icon:'error',title:'Error al guardar',text:data.message||'No se pudieron guardar los cambios.'});
-    })
-    .catch(err=>Swal.fire({icon:'error',title:'Error de conexión',html:err.message}));
-  });
-});
-
-document.getElementById('modalEditar')?.addEventListener('hidden.bs.modal',()=>{if(_pendingNotif)setTimeout(_abrirNotif,150);});
-document.getElementById('notifModal')?.addEventListener('hidden.bs.modal',()=>{_pendingNotif=null;location.reload();});
-
-function _abrirNotif(){
-  const data=_pendingNotif; if(!data) return;
-  const n=data.notificacion||{};
-  document.getElementById('notif-desc').innerHTML=`Trámite <strong>${data.folio}</strong> regresado a <strong>En revisión</strong>`;
-  if(n.mensaje){document.getElementById('notif-texto').textContent=n.mensaje;document.getElementById('notif-preview').style.display='block';}
-  const wa=document.getElementById('notif-wa'),gm=document.getElementById('notif-gm');
-  if(n.wa_link){wa.href=n.wa_link;wa.style.opacity='1';wa.style.pointerEvents='auto';wa.querySelector('.notif-sub').textContent=n.telefono?'Enviar a: '+n.telefono:'Abrir WhatsApp';}
-  else{wa.href='#';wa.style.opacity='0.35';wa.style.pointerEvents='none';wa.querySelector('.notif-sub').textContent='Sin número registrado';}
-  if(n.gm_link){gm.href=n.gm_link;gm.style.opacity='1';gm.style.pointerEvents='auto';gm.querySelector('.notif-sub').textContent=n.correo?'Enviar a: '+n.correo:'Abrir correo';}
-  else{gm.href='#';gm.style.opacity='0.35';gm.style.pointerEvents='none';gm.querySelector('.notif-sub').textContent='Sin correo registrado';}
-  const el=document.getElementById('notifModal');
-  el.removeAttribute('aria-hidden');
-  new bootstrap.Modal(el,{backdrop:'static',keyboard:false}).show();
-}
-
-// ── DATATABLES ──
-$(document).ready(function(){
-  const lang={paginate:{previous:'Anterior',next:'Siguiente'},info:'Mostrando _START_ a _END_ de _TOTAL_',infoEmpty:'Sin registros',zeroRecords:'Sin resultados',search:'Buscar:',lengthMenu:'Mostrar _MENU_ registros'};
-
-  // Debug: Check table structures before initializing
-  console.log('Initializing DataTables...');
-  console.log('tablaAprobadosSec exists:', $('#tablaAprobadosSec').length);
-  console.log('tablaAprobadosSec rows:', $('#tablaAprobadosSec tbody tr').length);
-  console.log('tablaSeguimiento exists:', $('#tablaSeguimiento').length);
-  console.log('tablaSeguimiento rows:', $('#tablaSeguimiento tbody tr').length);
-
-  if($('#tablaAprobadosSec').length) {
-    try {
-      $('#tablaAprobadosSec').DataTable({
-        language: lang,
-        order: [[7,'desc']],
-        pageLength: 10
-      });
-      console.log('tablaAprobadosSec initialized successfully');
-    } catch(e) {
-      console.error('Error initializing tablaAprobadosSec DataTable:', e);
-    }
-  }
-  if($('#tablaCorreccion').length) {
-    try {
-      $('#tablaCorreccion').DataTable({
-        language:lang,
-        order:[[4,'asc']],
-        columnDefs:[{orderable:false,targets:6}]
-      });
-    } catch(e) {
-      console.error('Error initializing tablaCorreccion DataTable:', e);
-    }
-  }
-  if($('#tablaSeguimiento').length) {
-    try {
-      $('#tablaSeguimiento').DataTable({
-        language: lang,
-        order: [[4,'desc']],
-        pageLength: 10
-      });
-      console.log('tablaSeguimiento initialized successfully');
-    } catch(e) {
-      console.error('Error initializing tablaSeguimiento DataTable:', e);
-    }
-  }
-  if($('#tablaFirmaDirector').length) {
-    try {
-      $('#tablaFirmaDirector').DataTable({
-        language:lang,
-        order:[[5,'asc']],
-        columnDefs:[{orderable:false,targets:6}]
-      });
-    } catch(e) {
-      console.error('Error initializing tablaFirmaDirector DataTable:', e);
-    }
-  }
-});
+<script src="js/dashVentanilla.js"></script>
 
 
-// ── VARIABLES GLOBALES PARA CONSTANCIA ──
-let _cs_croquis_guardado = false;
-let _cs_folio_actual = '';
-
-
-
-// ── Modal CONSTANCIA Ventanilla: poblar ──
-$(document).on('click', '.btn-constancia-sec', function(){
-  // GUARDAR FOLIO
-  _cs_folio_actual = $(this).data('folio');
-  document.getElementById('cs_folio_hidden').value = _cs_folio_actual;
-  
-  // DATOS GENERALES
-  $('#cs_folio').text($(this).data('folio'));
-  $('#cs_propietario').text($(this).data('propietario'));
-  $('#cs_direccion').text($(this).data('direccion') || '—');
-  $('#cs_localidad').text($(this).data('localidad') || '—');
-  // ── FOLIO SALIDA ──
-let folioSalidaNumero = $(this).data('folio-salida-numero');
-let folioSalidaAnio   = $(this).data('folio-salida-anio');
-
-if (folioSalidaNumero) {
-  let folioSalida = String(folioSalidaNumero).padStart(3, '0') + "/" + folioSalidaAnio;
-  $('#cs_folio_salida').text(folioSalida);
-} else {
-  $('#cs_folio_salida').text('—');
-}
-
-  // DATOS ESPECÍFICOS DE CONSTANCIA
-  $('#cs_tipo_asignacion').text($(this).data('tipo-asignacion') || 'ASIGNACIÓN');
-  $('#cs_numero_asignado').text($(this).data('numero-asignado') || '—');
-  $('#cs_referencia_anterior').text($(this).data('referencia-anterior') || '—');
-  $('#cs_entre_calles').text($(this).data('entre-calles') || '—');
-  $('#cs_cuenta_catastral').text($(this).data('cuenta-catastral') || '—');
-  $('#cs_manzana').text($(this).data('manzana') || '—');
-  $('#cs_lote').text($(this).data('lote') || '—');
-  $('#cs_fecha_constancia').text($(this).data('fecha-constancia') || new Date().toLocaleDateString('es-MX'));
-
-  // CROQUIS
-  let croquis = $(this).data('croquis');
-  _cs_croquis_guardado = !!croquis; // Determinar si hay croquis
-  
-  if(croquis && croquis.trim()) {
-    const imgUrl = 'uploads/' + croquis;
-    $('#cs_preview_img').attr('src', imgUrl).show();
-    $('#cs_no_img').hide();
-  } else {
-    $('#cs_preview_img').hide();
-    $('#cs_no_img').show();
-  }
-});
-
-// ── Imprimir constancia (CORREGIDO CON VALIDACIÓN DE FOLIO SALIDA) ──
-document.getElementById('btnImprimirConstanciaSec').addEventListener('click', function() {
-  const folio = _cs_folio_actual || document.getElementById('cs_folio_hidden').value;
-  const folioSalida = document.getElementById('cs_folio_salida').textContent;
-  
-  if (!folio) {
-    Swal.fire({ 
-      icon: 'error', 
-      title: 'Error', 
-      text: 'No se pudo obtener el folio del trámite.',
-      confirmButtonColor: '#7b0f2b' 
-    });
-    return;
-  }
-
-  // VALIDAR QUE TENGA FOLIO DE SALIDA
-  if (!folioSalida || folioSalida === '—') {
-    Swal.fire({ 
-      icon: 'warning', 
-      title: 'Sin folio de salida',
-      text: 'Este trámite aún no ha sido firmado por el Director. No se puede generar la constancia.',
-      confirmButtonColor: '#7b0f2b',
-      timer: 6000,
-      timerProgressBar: true,
-      showConfirmButton: true
-    });
-    return;
-  }
-
-  if (!_cs_croquis_guardado) {
-    Swal.fire({ 
-      icon: 'warning', 
-      title: 'Croquis requerido',
-      text: 'La constancia requiere un croquis guardado para poder imprimirse.',
-      confirmButtonColor: '#7b0f2b' 
-    });
-    return;
-  }
-
-  // Abrir constancia para impresión/firma en la MISMA PESTAÑA
-  const url = 'constancia_numero.php?folio=' + encodeURIComponent(folio) + '&imprimir=1';
-  window.location.href = url;
-});
-
-// ── Limpiar estado al cerrar modal ──
-document.getElementById('modalConstanciaSec').addEventListener('hidden.bs.modal', function() {
-  _cs_croquis_guardado = false;
-  _cs_folio_actual = '';
-  $('#cs_preview_img').hide();
-  $('#cs_no_img').show();
-});
-
-
-$(document).on('click', '.btn-reimprimir', function() {
-
-    let folio = $(this).data('folio');
-
-    let folioSalidaNumero = $(this).data('folio-salida-numero');
-    let folioSalidaAnio   = $(this).data('folio-salida-anio');
-
-    // Mostrar folio de entrada
-    $('#cs_folio').text(folio);
-
-    // Construir folio de salida
-    let folioSalida = '—';
-
-    if (folioSalidaNumero && folioSalidaAnio) {
-        folioSalida = String(folioSalidaNumero).padStart(3, '0') + '/' + folioSalidaAnio;
-    }
-
-    // Mostrar folio de salida
-    $('#cs_folio_salida').text(folioSalida);
-
-});
-
-
-
-
-document.querySelectorAll('.btn-firmar-director').forEach(function(btn) {
-  btn.addEventListener('click', function() {
-    var d = btn.dataset;
-    document.getElementById('fd_folio').textContent      = d.folio;
-    var fdSalida = d.folioSalida || '';
-    var fdSalidaEl = document.getElementById('fd_folio_salida');
-    if (fdSalida) {
-      fdSalidaEl.textContent = fdSalida;
-      fdSalidaEl.className = 'badge bg-success fs-6';
-    } else {
-      fdSalidaEl.textContent = '—';
-      fdSalidaEl.className = 'badge bg-secondary fs-6';
-    }
-    document.getElementById('fd_folio_hidden').value     = d.folio;
-    document.getElementById('fd_propietario').textContent= d.propietario;
-    document.getElementById('fd_tramite').textContent    = d.tramite;
-    document.getElementById('fd_telefono').textContent   = d.telefono || '—';
-    document.getElementById('fd_tipo_tramite_id').value  = d.tipoTramiteId || '';
-    document.getElementById('fd_observaciones').value    = '';
-    document.getElementById('fd_btn_ficha').href         = 'ficha.php?folio=' + d.folio;
-    // Limpiar radios
-    document.getElementById('rdAprobado').checked  = false;
-    document.getElementById('rdRechazado').checked = false;
-  });
-});
-
-// ── Envío resolución Director ──
-var _pendingNotifFD = null;
-
-document.getElementById('formFirmaDirector').addEventListener('submit', function(e) {
-  e.preventDefault();
-
-  var estatusSeleccionado = document.querySelector('input[name="estatus"]:checked');
-  if (!estatusSeleccionado) {
-    Swal.fire({icon:'warning', title:'Selecciona una resolución', text:'Debes elegir Aprobado o Rechazado.'});
-    return;
-  }
-
-  var estatus = estatusSeleccionado.value;
-  var etiqueta = estatus === 'Aprobado' ? '✅ Aprobado — firmado por el Director' : '❌ Rechazado';
-
-  Swal.fire({
-    title: '¿Confirmar resolución?',
-    html: 'Resolución: <strong>' + etiqueta + '</strong>',
-    icon: 'question',
-    showCancelButton: true,
-    confirmButtonText: 'Sí, guardar',
-    cancelButtonText: 'Cancelar',
-    confirmButtonColor: estatus === 'Aprobado' ? '#198754' : '#dc3545',
-    cancelButtonColor: '#6c757d'
-  }).then(function(result) {
-    if (!result.isConfirmed) return;
-
-    fetch('php/actualizarTramite.php', {
-      method: 'POST',
-      body: new FormData(document.getElementById('formFirmaDirector')),
-      credentials: 'same-origin'
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-      if (data.success) {
-        _pendingNotifFD = data;
-        bootstrap.Modal.getInstance(document.getElementById('modalFirmaDirector')).hide();
-      } else {
-        Swal.fire({icon:'error', title:'Error', text: data.message || 'No se pudo guardar.'});
-      }
-    })
-    .catch(function(err) {
-      Swal.fire({icon:'error', title:'Error de conexión', text: err.message});
-    });
-  });
-});
-
-document.getElementById('modalFirmaDirector').addEventListener('hidden.bs.modal', function() {
-  if (_pendingNotifFD) setTimeout(function() { _abrirNotifFD(_pendingNotifFD); }, 150);
-});
-
-function _abrirNotifFD(data) {
-  var n = data.notificacion || {};
-  document.getElementById('notif-desc').innerHTML =
-    'Trámite <strong>' + data.folio + '</strong> — <strong>' + data.estatus + '</strong>';
-
-  if (n.mensaje) {
-    document.getElementById('notif-texto').textContent = n.mensaje;
-    document.getElementById('notif-preview').style.display = 'block';
-  }
-
-  var wa = document.getElementById('notif-wa');
-  var gm = document.getElementById('notif-gm');
-
-  if (n.wa_link) {
-    wa.href = n.wa_link; wa.style.opacity='1'; wa.style.pointerEvents='auto';
-    wa.querySelector('.notif-sub').textContent = n.telefono ? 'Enviar a: '+n.telefono : 'Abrir WhatsApp';
-  } else {
-    wa.href='#'; wa.style.opacity='0.35'; wa.style.pointerEvents='none';
-    wa.querySelector('.notif-sub').textContent = 'Sin número de teléfono registrado';
-  }
-  if (n.gm_link) {
-    gm.href = n.gm_link; gm.style.opacity='1'; gm.style.pointerEvents='auto';
-    gm.querySelector('.notif-sub').textContent = n.correo ? 'Enviar a: '+n.correo : 'Abrir correo';
-  } else {
-    gm.href='#'; gm.style.opacity='0.35'; gm.style.pointerEvents='none';
-    gm.querySelector('.notif-sub').textContent = 'Sin correo registrado';
-  }
-
-  var el = document.getElementById('notifModal');
-  el.removeAttribute('aria-hidden');
-  new bootstrap.Modal(el, {backdrop:'static', keyboard:false}).show();
-  _pendingNotifFD = null;
-}
-
-// ── GRÁFICA REPORTE VENTANILLA ──
-(function() {
-  var labels = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-  var datosApr  = <?= json_encode(array_map(function($m) use ($datos_mes) { return isset($datos_mes[$m]) ? (int)$datos_mes[$m]['aprobados'] : 0; }, range(1,12))) ?>;
-  var datosRev  = <?= json_encode(array_map(function($m) use ($datos_mes) { return isset($datos_mes[$m]) ? (int)$datos_mes[$m]['en_revision'] : 0; }, range(1,12))) ?>;
-  var datosRec  = <?= json_encode(array_map(function($m) use ($datos_mes) { return isset($datos_mes[$m]) ? (int)$datos_mes[$m]['rechazados'] : 0; }, range(1,12))) ?>;
-  var canvas = document.getElementById('chartReporteMesSec');
-  if (canvas && typeof Chart !== 'undefined') {
-    new Chart(canvas, {
-      type: 'bar',
-      data: {
-        labels: labels,
-        datasets: [
-          { label: 'Aprobados', data: datosApr, backgroundColor: '#198754' },
-          { label: 'En Revisión', data: datosRev, backgroundColor: '#ffc107' },
-          { label: 'Rechazados', data: datosRec, backgroundColor: '#dc3545' }
-        ]
-      },
-      options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { x: { stacked: false }, y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
-    });
-  }
-})();
-
-function imprimirReporteSec() {
-  var t1 = document.getElementById('tablaReporteMesSec');
-  var t2 = document.getElementById('tablaReporteTipoSec');
-  if (!t1) { alert('No hay datos para imprimir.'); return; }
-  var tabla1 = t1.outerHTML;
-  var tabla2 = t2 ? '<h3 style="margin-top:24px;color:#7b0f2b;">Por Tipo de Trámite</h3>' + t2.outerHTML : '';
-  var w = window.open('', '_blank');
-  w.document.write(
-    '<html><head><title>Reporte <?= $anio_filtro ?></title><style>' +
-    'body{font-family:Arial,sans-serif;padding:20px;color:#222;}' +
-    'h2,h3{color:#7b0f2b;margin:6px 0;}' +
-    'table{width:100%;border-collapse:collapse;margin-top:10px;font-size:13px;}' +
-    'th,td{border:1px solid #bbb;padding:6px 10px;text-align:center;}' +
-    'td:first-child{text-align:left;}' +
-    'thead th{color:white;}' +
-    'tfoot tr:first-child td{background:#e0e0e0;font-weight:bold;}' +
-    'tfoot tr:last-child td{background:#d0d0d0;font-weight:bold;}' +
-    '.badge{padding:2px 8px;border-radius:4px;font-size:12px;color:white;display:inline-block;}' +
-    '.bg-primary{background:#0d6efd;}.bg-success{background:#198754;}' +
-    '.bg-warning{background:#ffc107;color:#000!important;}' +
-    '.bg-info{background:#0dcaf0;color:#000!important;}' +
-    '.bg-danger{background:#dc3545;}.bg-dark{background:#212529;}' +
-    '.text-muted{color:#888;}.progress{display:none;}' +
-    '</style></head><body>' +
-    '<h2>Reporte de Trámites — <?= $anio_filtro ?></h2>' +
-    '<p style="color:#555;margin-bottom:16px;">Generado: ' + new Date().toLocaleDateString('es-MX') + ' | Usuario: <?= addslashes($_SESSION['usuario'] ?? '') ?></p>' +
-    tabla1 + tabla2 +
-    '</body></html>'
-  );
-  w.document.close();
-  setTimeout(function(){ w.print(); }, 400);
-}
-
-// ── Guardar formato de constancia ──
-function guardarConfigConstancia() {
-  var form  = document.getElementById('formConfigConstancia');
-  var msg   = document.getElementById('msg-config-constancia');
-  var btn   = form.querySelector('button[onclick]');
-  var fd    = new FormData(form);
-
-  msg.textContent = 'Guardando...';
-  msg.style.color = '#666';
-  btn.disabled = true;
-
-  fetch('php/actualizar_config_constancia.php', {
-    method: 'POST',
-    body: fd,
-    credentials: 'same-origin'
-  })
-  .then(function(r){ return r.json(); })
-  .then(function(data){
-    btn.disabled = false;
-    if (data.success) {
-      msg.textContent = '✅ ' + data.message;
-      msg.style.color = '#198754';
-    } else {
-      msg.textContent = '❌ ' + data.message;
-      msg.style.color = '#dc3545';
-    }
-    setTimeout(function(){ msg.textContent = ''; }, 4000);
-  })
-  .catch(function(){
-    btn.disabled = false;
-    msg.textContent = '❌ Error de conexión.';
-    msg.style.color = '#dc3545';
-  });
-}
-// ── FUNCIÓN PARA CARGAR DATOS DE TRÁMITE ANTERIOR EN VENTANILLA (CON COPIA DE DOCUMENTOS) ──
-function cargarDatosTramiteVentanilla(tramite, folioOrigen) {
-    // Datos generales
-    document.querySelector('input[name="propietario"]').value = tramite.propietario || '';
-    document.querySelector('input[name="direccion"]').value = tramite.direccion || '';
-    document.querySelector('input[name="localidad"]').value = tramite.localidad || '';
-    document.querySelector('input[name="colonia"]').value = tramite.colonia || '';
-    document.querySelector('input[name="cp"]').value = tramite.cp || '';
-    document.querySelector('input[name="cuenta_catastral"]').value = tramite.cuenta_catastral || '';
-    document.querySelector('input[name="superficie"]').value = tramite.superficie || '';
-    document.querySelector('input[name="lat"]').value = tramite.lat || '';
-    document.querySelector('input[name="lng"]').value = tramite.lng || '';
-    document.querySelector('input[name="solicitante"]').value = tramite.solicitante || '';
-    document.querySelector('input[name="telefono"]').value = tramite.telefono || '';
-    document.querySelector('input[name="correo"]').value = tramite.correo || '';
-    
-    // Mostrar loading mientras se copian los documentos
-    Swal.fire({
-        title: 'Copiando documentos...',
-        text: 'Por favor espera',
-        allowOutsideClick: false,
-        didOpen: () => { Swal.showLoading(); }
-    });
-    
-    // Obtener el folio actual del nuevo trámite
-    const folioNumero = document.querySelector('input[name="folio_numero"]').value;
-    const folioAnio = document.querySelector('input[name="folio_anio"]').value;
-    const folioDestino = `${String(folioNumero).padStart(3, '0')}/${folioAnio}`;
-    
-    // Copiar los documentos del trámite anterior al nuevo
-    fetch('php/copiar_documentos_tramite.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `folio_origen=${encodeURIComponent(folioOrigen)}&folio_destino=${encodeURIComponent(folioDestino)}`
-    })
-    .then(response => response.json())
-    .then(data => {
-        Swal.close();
-        
-        if (data.success) {
-            // Mostrar alerta corta
-            let mensajeCorto = 'Documentos copiados correctamente.';
-            
-            // Mostrar información de constancia de forma más compacta
-            if (tramite.constancia) {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Datos cargados',
-                    confirmButtonText: 'Entendido',
-                    confirmButtonColor: '#7b0f2b',
-                    timer: 3000,
-                    timerProgressBar: true,
-                    showConfirmButton: true
-                });
-            } else {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Datos cargados',
-                    text: 'Datos del trámite anterior cargados correctamente.',
-                    timer: 2000,
-                    showConfirmButton: false
-                });
-            }
-            
-            // Mostrar enlaces a los documentos copiados en el formulario
-            mostrarDocumentosCopiados(data.archivos_copiados, folioOrigen);
-            
-        } else {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: data.error || 'No se pudieron copiar los documentos.',
-                confirmButtonColor: '#7b0f2b'
-            });
-        }
-    })
-    .catch(error => {
-        Swal.close();
-        Swal.fire({
-            icon: 'error',
-            title: 'Error de conexión',
-            text: 'No se pudo conectar con el servidor.',
-            confirmButtonColor: '#7b0f2b'
-        });
-    });
-}
-
-// ── FUNCIÓN PARA MOSTRAR DOCUMENTOS COPIADOS CON OPCIÓN DE DESCARGAR ──
-function mostrarDocumentosCopiados(archivos, tramiteOrigen) {
-    if (!archivos) return;
-    
-    const nombres = {
-        'ine': 'INE',
-        'escritura': 'Escritura/Título',
-        'predial': 'Boleta Predial',
-    };
-    
-    // Crear o actualizar una sección para mostrar los documentos copiados
-    let seccionDocs = document.getElementById('documentos-copiados');
-    
-    if (!seccionDocs) {
-        // Crear la sección si no existe
-        const seccionDocumentos = document.getElementById('seccion-documentos');
-        if (seccionDocumentos) {
-            const div = document.createElement('div');
-            div.id = 'documentos-copiados';
-            div.className = 'alert alert-info mb-3';
-            div.style.fontSize = '0.85rem';
-            div.innerHTML = `
-                <div class="d-flex justify-content-between align-items-center">
-                    <strong><i class="bi bi-archive me-1"></i>Documentos del trámite anterior:</strong>
-                    <button type="button" class="btn btn-sm btn-outline-success" id="btnDescargarTodos" onclick="descargarTodosDocumentos()">
-                        <i class="bi bi-download me-1"></i>Descargar todos
-                    </button>
-                </div>
-                <div id="lista-docs-copiados" class="mt-2"></div>
-                <small class="text-muted mt-2 d-block">⚠️ Puedes descargar estos documentos y luego subirlos manualmente en los campos faltantes si es necesario.</small>
-            `;
-            seccionDocumentos.insertBefore(div, seccionDocumentos.firstChild);
-            seccionDocs = div;
-        }
-    }
-    
-    if (seccionDocs) {
-        const lista = document.getElementById('lista-docs-copiados');
-        if (lista) {
-            lista.innerHTML = '';
-            let documentos = [];
-            
-            for (const [tipo, archivo] of Object.entries(archivos)) {
-                if (archivo) {
-                    const nombreDoc = nombres[tipo] || tipo;
-                    const li = document.createElement('div');
-                    li.className = 'd-flex justify-content-between align-items-center mb-2 p-2 border rounded bg-white';
-                    li.innerHTML = `
-                        <div>
-                            <i class="bi bi-file-earmark-check text-success me-2"></i>
-                            <strong>${nombreDoc}</strong>
-                            <small class="text-muted ms-2">(${archivo})</small>
-                        </div>
-                        <a href="uploads/${encodeURIComponent(archivo)}" 
-                           download 
-                           class="btn btn-sm btn-outline-primary"
-                           target="_blank">
-                            <i class="bi bi-download me-1"></i>Descargar
-                        </a>
-                    `;
-                    lista.appendChild(li);
-                    documentos.push({ tipo: nombreDoc, archivo: archivo });
-                }
-            }
-            
-            // Guardar la lista de documentos para la función de descargar todos
-            window.documentosCopiados = documentos;
-            
-            if (documentos.length === 0) {
-                lista.innerHTML = '<div class="text-muted text-center py-2">No se copiaron documentos</div>';
-            }
-            seccionDocs.style.display = 'block';
-        }
-    }
-}
-
-// ── FUNCIÓN PARA DESCARGAR TODOS LOS DOCUMENTOS EN UN ZIP ──
-function descargarTodosDocumentos() {
-    if (!window.documentosCopiados || window.documentosCopiados.length === 0) {
-        Swal.fire({
-            icon: 'info',
-            title: 'Sin documentos',
-            text: 'No hay documentos para descargar.',
-            confirmButtonColor: '#7b0f2b'
-        });
-        return;
-    }
-    
-    Swal.fire({
-        title: 'Preparando descarga...',
-        text: 'Los documentos se descargarán individualmente. Revisa tu carpeta de descargas.',
-        allowOutsideClick: false,
-        didOpen: () => { Swal.showLoading(); }
-    });
-    
-    // Descargar cada documento individualmente con un pequeño retraso
-    let i = 0;
-    function descargarSiguiente() {
-        if (i >= window.documentosCopiados.length) {
-            Swal.close();
-            Swal.fire({
-                icon: 'success',
-                title: 'Descarga completada',
-                text: `Se descargaron ${window.documentosCopiados.length} documentos.`,
-                timer: 3000,
-                showConfirmButton: false
-            });
-            return;
-        }
-        
-        const doc = window.documentosCopiados[i];
-        const link = document.createElement('a');
-        link.href = 'uploads/' + encodeURIComponent(doc.archivo);
-        link.download = doc.archivo;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        i++;
-        setTimeout(descargarSiguiente, 800);
-    }
-    
-    descargarSiguiente();
-}
-// ── EVENTO PARA BUSCAR POR PROPIETARIO ──
-document.getElementById('btnBuscarTramiteAnterior')?.addEventListener('click', function() {
-    const propietario = document.getElementById('propietario_input').value.trim();
-    const tipoTramiteId = document.getElementById('tipo_tramite_id_hidden').value;
-    
-    if (!propietario) {
-        Swal.fire({ icon: 'warning', title: 'Nombre requerido', text: 'Escribe el nombre del propietario primero.', confirmButtonColor: '#7b0f2b' });
-        return;
-    }
-    
-    if (!tipoTramiteId) {
-        Swal.fire({ icon: 'warning', title: 'Tipo de trámite', text: 'Selecciona el tipo de trámite primero.', confirmButtonColor: '#7b0f2b' });
-        return;
-    }
-    
-    Swal.fire({ title: 'Buscando...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
-    
-    fetch(`php/obtener_tramite_anterior.php?propietario=${encodeURIComponent(propietario)}&tipo_tramite_id=${tipoTramiteId}&incluir_constancia=true`)
-        .then(response => response.json())
-        .then(data => {
-            Swal.close();
-            if (data.error) {
-                Swal.fire({ icon: 'error', title: 'Error', text: data.error, confirmButtonColor: '#7b0f2b' });
-                return;
-            }
-            if (data.tramite) {
-                Swal.fire({
-                    title: '¿Cargar datos?',
-                    html: `Trámite encontrado:<br>
-                           <strong>Folio Ingreso:</strong> ${data.tramite.folio}<br>
-                           <strong>Folio Salida:</strong> ${data.tramite.folio_salida || '—'}<br>
-                           <strong>Propietario:</strong> ${data.tramite.propietario}<br>
-                           <strong>Dirección:</strong> ${data.tramite.direccion}<br><br>`,
-                    icon: 'question',
-                    showCancelButton: true,
-                    confirmButtonText: 'Sí, cargar',
-                    cancelButtonText: 'Cancelar',
-                    confirmButtonColor: '#198754'
-                }).then(result => {
-                    if (result.isConfirmed) {
-                        cargarDatosTramiteVentanilla(data.tramite, data.tramite.folio);
-                    }
-                });
-            } else {
-                Swal.fire({ icon: 'info', title: 'Sin resultados', text: 'No se encontraron trámites anteriores.', confirmButtonColor: '#7b0f2b' });
-            }
-        })
-        .catch(error => {
-            Swal.close();
-            Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo conectar con el servidor.', confirmButtonColor: '#7b0f2b' });
-        });
-});
-
-// ── EVENTO PARA BUSCAR POR FOLIO (abrir modal) ──
-document.getElementById('btnCargarPorFolio')?.addEventListener('click', function() {
-    const modal = new bootstrap.Modal(document.getElementById('modalCargarPorFolio'));
-    modal.show();
-});
-
-// ── EVENTO PARA CONFIRMAR CARGA POR FOLIO DE SALIDA ──
-document.getElementById('btnConfirmarCargarFolio')?.addEventListener('click', function() {
-    const folioSalida = document.getElementById('folio_cargar').value.trim();
-    if (!folioSalida) {
-        Swal.fire({ icon: 'warning', title: 'Folio requerido', text: 'Ingresa el folio de salida del trámite anterior.', confirmButtonColor: '#7b0f2b' });
-        return;
-    }
-    
-    Swal.fire({ title: 'Buscando...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
-    
-    // Buscar por folio de salida (añadir parámetro buscar_por_folio_salida=true)
-    fetch(`php/obtener_tramite_anterior.php?folio=${encodeURIComponent(folioSalida)}&incluir_constancia=true&buscar_por_folio_salida=true`)
-        .then(response => response.json())
-        .then(data => {
-            Swal.close();
-            if (data.error) {
-                Swal.fire({ icon: 'error', title: 'Error', text: data.error, confirmButtonColor: '#7b0f2b' });
-                return;
-            }
-            if (data.tramite) {
-                Swal.fire({
-                    title: '¿Cargar datos?',
-                    html: `Trámite encontrado:<br>
-                           <strong>Folio Ingreso:</strong> ${data.tramite.folio}<br>
-                           <strong>Folio Salida:</strong> ${data.tramite.folio_salida || '—'}<br>
-                           <strong>Propietario:</strong> ${data.tramite.propietario}<br>
-                           <strong>Dirección:</strong> ${data.tramite.direccion}<br><br>`,
-                    icon: 'question',
-                    showCancelButton: true,
-                    confirmButtonText: 'Sí, cargar',
-                    cancelButtonText: 'Cancelar'
-                }).then(result => {
-                    if (result.isConfirmed) {
-                        cargarDatosTramiteVentanilla(data.tramite, data.tramite.folio);
-                        bootstrap.Modal.getInstance(document.getElementById('modalCargarPorFolio')).hide();
-                        document.getElementById('folio_cargar').value = ''; // Limpiar campo
-                    }
-                });
-            } else {
-                Swal.fire({ 
-                    icon: 'info', 
-                    title: 'Sin resultados', 
-                    text: `No se encontró ningún trámite con el folio de salida "${folioSalida}".`,
-                    confirmButtonColor: '#7b0f2b' 
-                });
-            }
-        })
-        .catch(error => {
-            Swal.close();
-            Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo conectar.', confirmButtonColor: '#7b0f2b' });
-        });
-});
 </script>
-</body>
-</html>

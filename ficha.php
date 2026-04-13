@@ -546,7 +546,7 @@ $conn->close();
                 <div class="tipo-tramite-label">Tipo de Tramite:</div>
                 <div class="tipo-tramite-value">
                     <?= htmlspecialchars($tramite['tipo_tramite_nombre'] ?? 'Sin tipo') ?>
-                    (<?= htmlspecialchars($tramite['folio_numero']) ?>)
+                    <!-- <?= htmlspecialchars($tramite['folio_numero']) ?>-->
                 </div>
             </div>
 
