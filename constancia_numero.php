@@ -427,21 +427,21 @@ else                     $back = 'DashVer.php';
             padding-bottom:5px; 
         }
         
-        .croquis-marco { 
-            border:2px solid #7b0f2b; 
-            border-radius:4px; 
-            min-height:240px; 
-            max-height:260px; 
-            display:flex; 
-            align-items:center; 
-            justify-content:center; 
-            overflow:hidden; 
+        .croquis-marco {
+            border:2px solid #7b0f2b;
+            border-radius:4px;
+            min-height:400px;
+            max-height:450px;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            overflow:hidden;
         }
-        
-        .croquis-marco img { 
-            width:100%; 
-            max-height:260px; 
-            object-fit:contain; 
+
+        .croquis-marco img {
+            width:100%;
+            max-height:450px;
+            object-fit:contain;
         }
         
         .croquis-firma { 
@@ -639,8 +639,8 @@ else                     $back = 'DashVer.php';
 
             /* Página 2: croquis — no se ve afectado por los cambios de arriba */
             .croquis-marco {
-                min-height: 220px !important;
-                max-height: 240px !important;
+                min-height: 380px !important;
+                max-height: 900px !important;
             }
             /* Ocultar URL y fecha que agrega el navegador */
             @page {
@@ -781,16 +781,16 @@ else                     $back = 'DashVer.php';
     </div>
     <div class="croquis-titulo" style="margin:3px 0 2px;">CROQUIS DE UBICACIÓN DEL PREDIO</div>
     <div class="croquis-subtitulo" style="margin-bottom:5px;">El croquis es de carácter ilustrativo y no constituye deslinde ni apeo del inmueble.</div>
-    <div class="croquis-marco" id="croquis-marco" style="min-height:160px;max-height:190px;">
+    <div class="croquis-marco" id="croquis-marco" style="min-height:400px;max-height:450px;">
         <?php if (!empty($croquis_archivo) && file_exists('uploads/' . $croquis_archivo)): ?>
-            <img src="uploads/<?= htmlspecialchars($croquis_archivo) ?>" id="img-croquis" alt="Croquis" style="max-height:190px;">
+            <img src="uploads/<?= htmlspecialchars($croquis_archivo) ?>" id="img-croquis" alt="Croquis" style="max-height:450px;">
         <?php else: ?>
             <div id="croquis-placeholder" style="text-align:center;color:#aaa;padding:20px;">
                 <div style="font-size:2rem;margin-bottom:5px;">🗺️</div>
                 <p><strong>Sin croquis</strong></p>
                 <p style="font-size:8pt;">Usa el panel lateral para cargar la imagen.</p>
             </div>
-            <img id="img-croquis" src="" alt="Croquis" style="display:none;width:100%;max-height:190px;object-fit:contain;">
+            <img id="img-croquis" src="" alt="Croquis" style="display:none;width:100%;max-height:450px;object-fit:contain;">
         <?php endif; ?>
     </div>
     <!-- Texto reglamentario al reverso -->
@@ -863,6 +863,7 @@ function prevCroquis(input) {
         var ph  = document.getElementById('croquis-placeholder');
         img.src = e.target.result;
         img.style.display = 'block';
+        img.style.maxHeight = '900px';
         if (ph) ph.style.display = 'none';
         // Mostrar botón guardar
         document.getElementById('btn-subir').style.display = 'block';

@@ -1,7 +1,7 @@
 // ── MAPA ──
 
 
-proj4.defs('EPSG:32614', '+proj=utm +zone=14 +datum=WGS84 +units=m +no_defs');
+proj4.defs('EPSG:32613', '+proj=utm +zone=13 +datum=WGS84 +units=m +no_defs');
 const CENTRO_MUNICIPIO = [22.228, -102.320];
 const map = L.map('mapa', { zoomControl: true, scrollWheelZoom: true, tap: true }).setView(CENTRO_MUNICIPIO, 14);
 let marker = null;
@@ -28,10 +28,14 @@ const baseLayers = {
     "Satelital": satellite
 };
 
-L.control.layers(baseLayers, null, {
+const overlays = {};
+
+const layerControl = L.control.layers(baseLayers, overlays, {
     position: 'topright',
     collapsed: false
 }).addTo(map);
+
+
 
 // Cargar puntos de trámites (tu código original, corregido)
 
@@ -90,7 +94,7 @@ function buscarYResaltarPoligono(cuentaCatastral) {
       // Mostrar coordenadas
       const lat = center.lat.toFixed(5);
       const lon = center.lng.toFixed(5);
-      const utmCoords = proj4('EPSG:4326', 'EPSG:32614', [parseFloat(lon), parseFloat(lat)]);
+      const utmCoords = proj4('EPSG:4326', 'EPSG:32613', [parseFloat(lon), parseFloat(lat)]);
       const utmX = utmCoords[0].toFixed(2);
       const utmY = utmCoords[1].toFixed(2);
 
@@ -109,7 +113,7 @@ function buscarYResaltarPoligono(cuentaCatastral) {
   return encontrado;
 }
 
-// Cargar parcelas catastrales de TRAMITES_reprojected.geojson
+// Cargar poligonos de TRAMITES_reprojected.geojson
 fetch('./Geojson/TRAMITES_reprojected.geojson')
   .then(response => response.json())
   .then(data => {
@@ -140,7 +144,7 @@ fetch('./Geojson/TRAMITES_reprojected.geojson')
             let lon = center.lng.toFixed(5);
 
             // Convertir a UTM
-            let utmCoords = proj4('EPSG:4326', 'EPSG:32614', [parseFloat(lon), parseFloat(lat)]);
+            let utmCoords = proj4('EPSG:4326', 'EPSG:32613', [parseFloat(lon), parseFloat(lat)]);
             let utmX = utmCoords[0].toFixed(2);
             let utmY = utmCoords[1].toFixed(2);
 
@@ -167,55 +171,44 @@ fetch('./Geojson/TRAMITES_reprojected.geojson')
         }
       }
     }).addTo(map);
+
+    // Agregar a overlays
+    overlays["Poligonos"] = parcelasLayer;
+    layerControl.addOverlay(parcelasLayer, "Poligonos");
   })
   .catch(error => console.error('Error cargando GeoJSON de parcelas:', error));
 
+// Cargar capa de trámites
+fetch('./Geojson/TRAMITES.geojson')
+  .then(response => response.json())
+  .then(data => {
+    tramitesLayer = L.geoJSON(data, {
+      pointToLayer: function(feature, latlng) {
+        const marker = L.marker(latlng);
+        const props = feature.properties;
+        const popupContent = `
+          <div style="max-width: 300px;">
+            <h6 class="mb-2"><i class="bi bi-file-earmark-text me-1"></i>Trámite ${props.FOLIO_INGR || 'N/A'}</h6>
+            <strong>Solicitante:</strong> ${props.NOM_SOLI || 'N/A'}<br>
+            <strong>Tipo de Trámite:</strong> ${props.TIP_TRAMIT || 'N/A'}<br>
+            <strong>Ubicación:</strong> ${props.UBICACION || 'N/A'}<br>
+            <strong>Fecha Ingreso:</strong> ${props.FECH_INGRE || 'N/A'}<br>
+            <strong>Estatus:</strong> <span class="badge bg-${props.ESTATUS === 'ENTREGADO' ? 'success' : 'warning'}">${props.ESTATUS || 'N/A'}</span><br>
+            <strong>UTM X:</strong> ${props.X ? props.X.toFixed(2) : 'N/A'}<br>
+            <strong>UTM Y:</strong> ${props.Y ? props.Y.toFixed(2) : 'N/A'}<br>
+            <strong>Contacto:</strong> ${props.CONTACTO || 'N/A'}
+          </div>
+        `;
+        marker.bindPopup(popupContent);
+        return marker;
+      }
+    });
 
-// Buscar catastral
-let timeoutBusqueda;
-document.getElementById("cuenta_catastral")?.addEventListener("input", function(){
-    clearTimeout(timeoutBusqueda);
-    let cuenta = this.value.trim();
-
-    timeoutBusqueda = setTimeout(() => {
-        if(cuenta.length < 3) return;
-
-        // Intentar buscar el polígono directamente por cuenta catastral primero
-        const poligonoEncontrado = buscarYResaltarPoligono(cuenta);
-
-        // Si no se encontró el polígono, intentar búsqueda por coordenadas
-        if (!poligonoEncontrado) {
-            fetch("php/buscar_catastral.php?cuenta=" + encodeURIComponent(cuenta))
-            .then(response => response.json())
-            .then(data => {
-                if(data && data.utm_x && data.utm_y){
-                    let utmX = parseFloat(data.utm_x);
-                    let utmY = parseFloat(data.utm_y);
-
-                    document.getElementById("lat").value = utmX.toFixed(2);
-                    document.getElementById("lng").value = utmY.toFixed(2);
-
-                    let latlng = proj4("EPSG:32613","EPSG:4326",[utmX, utmY]);
-                    let lat = latlng[1];
-                    let lng = latlng[0];
-                    let punto = L.latLng(lat, lng);
-
-                    if (typeof map !== 'undefined') {
-                        map.setView(punto, 18);
-                        if(typeof marker !== 'undefined' && marker){
-                            map.removeLayer(marker);
-                        }
-                        marker = L.marker(punto).addTo(map);
-
-                        // Intentar resaltar el polígono más cercano a estas coordenadas
-                        buscarYResaltarPoligono(cuenta);
-                    }
-                }
-            })
-            .catch(error => console.error("Error:", error));
-        }
-    }, 600);
-});
+    // Agregar a overlays (inicialmente no visible)
+    overlays["Trámites"] = tramitesLayer;
+    layerControl.addOverlay(tramitesLayer, "Trámites");
+  })
+  .catch(error => console.error('Error cargando TRAMITES.geojson:', error));
 
 // ── MAYÚSCULAS ──
 document.querySelectorAll('.mayusculas').forEach(i=>{
@@ -1143,11 +1136,11 @@ document.getElementById('btnConfirmarCargarFolio')?.addEventListener('click', fu
                     }
                 });
             } else {
-                Swal.fire({ 
-                    icon: 'info', 
-                    title: 'Sin resultados', 
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Sin resultados',
                     text: `No se encontró ningún trámite con el folio de salida "${folioSalida}".`,
-                    confirmButtonColor: '#7b0f2b' 
+                    confirmButtonColor: '#7b0f2b'
                 });
             }
         })
@@ -1156,3 +1149,4 @@ document.getElementById('btnConfirmarCargarFolio')?.addEventListener('click', fu
             Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo conectar.', confirmButtonColor: '#7b0f2b' });
         });
 });
+

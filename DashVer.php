@@ -239,7 +239,6 @@ window.onpopstate = function () {
 </head>
 
 <body>
-
 <!-- NAVBAR MÓVIL -->
 <nav class="navbar navbar-dark bg-dark d-lg-none">
     <div class="container-fluid">
@@ -766,22 +765,22 @@ window.onpopstate = function () {
           <h6 class="text-primary"><i class="bi bi-camera me-1"></i> Paso 1 — Fotografías del Inmueble</h6>
           <p class="text-muted small mb-2">Sube las fotos, guarda y luego imprime la <strong>Ficha de Fotografías</strong>.</p>
           <div class="row g-3">
-            <div class="col-md-6">
-              <label class="form-label fw-bold">Fotografía 1</label>
-              <div id="preview_foto1_container" class="mb-2" style="display:none;">
-                <img id="preview_foto1" src="" alt="Foto 1" class="img-thumbnail" style="max-height:150px; cursor:pointer;" onclick="window.open(this.src, '_blank')">
-              </div>
-              <input type="file" class="form-control" name="foto1" id="input_foto1" accept="image/jpeg,image/png,image/jpg">
-              <small class="text-muted">JPG o PNG, máximo 5MB</small>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label fw-bold">Fotografía 2</label>
-              <div id="preview_foto2_container" class="mb-2" style="display:none;">
-                <img id="preview_foto2" src="" alt="Foto 2" class="img-thumbnail" style="max-height:150px; cursor:pointer;" onclick="window.open(this.src, '_blank')">
-              </div>
-              <input type="file" class="form-control" name="foto2" id="input_foto2" accept="image/jpeg,image/png,image/jpg">
-              <small class="text-muted">JPG o PNG, máximo 5MB</small>
-            </div>
+             <div class="col-md-6">
+               <label class="form-label fw-bold">Fotografía 1</label>
+               <div id="preview_foto1_container" class="mb-2" style="display:none;">
+                 <img id="preview_foto1" src="" alt="Foto 1" class="img-thumbnail" style="max-height:150px; cursor:pointer;" onclick="window.open(this.src, '_blank')">
+               </div>
+               <input type="file" class="form-control" name="foto1" id="input_foto1" accept="image/jpeg,image/png,image/jpg">
+               <small class="text-muted">JPG o PNG, máximo 5MB. También puedes pegar con Ctrl+V</small>
+             </div>
+             <div class="col-md-6">
+               <label class="form-label fw-bold">Fotografía 2</label>
+               <div id="preview_foto2_container" class="mb-2" style="display:none;">
+                 <img id="preview_foto2" src="" alt="Foto 2" class="img-thumbnail" style="max-height:150px; cursor:pointer;" onclick="window.open(this.src, '_blank')">
+               </div>
+               <input type="file" class="form-control" name="foto2" id="input_foto2" accept="image/jpeg,image/png,image/jpg">
+               <small class="text-muted">JPG o PNG, máximo 5MB. También puedes pegar con Ctrl+V</small>
+             </div>
           </div>
           <!-- Alerta: fotos necesarias antes de imprimir ficha -->
           <div id="alerta-sin-fotos" class="alert alert-warning py-2 mt-2 mb-0" style="font-size:.83rem;display:none;">
@@ -1061,10 +1060,13 @@ window.onpopstate = function () {
         </div>
         <div class="row g-2 align-items-start">
             <div class="col-md-6">
-                <label class="form-label small fw-semibold">Imagen del croquis (JPG/PNG, máx. 10MB)</label>
+                <label class="form-label small fw-semibold">Imagen del croquis (JPG/PNG, máx. 10MB, se redimensiona a 500x800 píxeles)</label>
                 <input type="file" class="form-control form-control-sm" id="ver_inp_croquis"
                        accept="image/jpeg,image/png,image/webp"
                        onchange="ver_prevCroquis(this)">
+                <div class="text-muted small mt-1">
+                    <i class="bi bi-clipboard me-1"></i>También puedes pegar una imagen con Ctrl+V
+                </div>
                 <button type="button" class="btn btn-sm btn-secondary w-100 mt-2"
                         id="ver_btn_subir" onclick="ver_subirCroquis()" style="display:none;">
                     <i class="bi bi-cloud-upload me-1"></i>Guardar croquis
@@ -1073,11 +1075,11 @@ window.onpopstate = function () {
             </div>
             <div class="col-md-6">
                 <label class="form-label small fw-semibold">Vista previa:</label>
-                <div id="ver_preview_box" style="border:2px dashed #ccc;border-radius:6px;min-height:110px;display:flex;align-items:center;justify-content:center;background:#f8f9fa;overflow:hidden;">
+                <div id="ver_preview_box" style="border:2px dashed #ccc;border-radius:6px;min-height:200px;display:flex;align-items:center;justify-content:center;background:#f8f9fa;overflow:hidden;">
                     <span id="ver_prev_ph" class="text-muted small text-center px-2">
                         <i class="bi bi-image fs-3 d-block mb-1"></i>Vista previa del croquis
                     </span>
-                    <img id="ver_prev_img" src="" style="display:none;width:100%;max-height:160px;object-fit:contain;">
+                    <img id="ver_prev_img" src="" style="display:none;width:100%;max-height:400px;object-fit:contain;">
                 </div>
             </div>
         </div>

@@ -146,22 +146,60 @@ $seg_res = $stmtSeg->get_result();
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
-<link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css"/>
-
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
-<link rel="stylesheet" href="./css/style.css?v=1">
+<!-- <link rel="stylesheet" href="./css/style.css?v=1"> -->
 <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.7.5/proj4.js"></script>
 <script>
 history.pushState(null,null,location.href);
 window.onpopstate=function(){history.go(1);};
 </script>
-<link rel="stylesheet" href="css/dashVentanilla.css">
+<style>
+:root{--vino:#7b0f2b;--vino-oscuro:#5e0b20;}
+body{background:#f4f6f9;font-family:'Segoe UI',sans-serif;}
+.sidebar{width:240px;height:100vh;position:fixed;top:0;left:0;
+  background:linear-gradient(180deg,var(--vino),var(--vino-oscuro));
+  color:white;padding:20px;z-index:1000;overflow-y:auto;
+  box-shadow:4px 0 20px rgba(0,0,0,.15);display:flex;flex-direction:column;}
+.sidebar h5{text-align:center;font-weight:700;margin-bottom:24px;}
+.sidebar a{color:rgba(255,255,255,.85);display:block;padding:8px 12px;
+  border-radius:6px;margin-bottom:4px;text-decoration:none;transition:background .2s;}
+.sidebar a:hover{background:rgba(255,255,255,.15);color:white;}
+.sidebar a.active{background:rgba(255,255,255,.22);color:white;font-weight:600;}
+.content{margin-left:240px;padding:30px;}
+@media(max-width:991px){.sidebar{display:none!important;}.content{margin-left:0;padding:15px;}}
+.hero{background:linear-gradient(135deg,var(--vino),var(--vino-oscuro));color:white;
+  border-radius:12px;padding:28px 32px;margin-bottom:28px;}
+.hero h1{font-size:1.5rem;font-weight:700;margin-bottom:6px;}
+.tramite-box{background:#fff;border-radius:12px;padding:24px;
+  box-shadow:0 2px 12px rgba(0,0,0,.07);margin-bottom:24px;}
+.tramite-selector-card:hover{border-color:var(--vino)!important;
+  box-shadow:0 4px 16px rgba(123,15,43,.15);transform:translateY(-2px);}
+#mapa{height:380px;border-radius:12px;}
+/* Corregir overlay transparente en el hero */
+.hero {
+    position: relative;
+    z-index: 1;
+}
+
+/* Eliminar cualquier pseudo-elemento que pueda estar creando el overlay */
+.hero::before {
+    display: none !important;
+    content: none !important;
+}
+
+/* Asegurar que el texto sea completamente visible */
+.hero h1, 
+.hero p,
+.hero strong,
+.hero * {
+    position: relative;
+    z-index: 2;
+    color: white !important;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+}
+</style>
 </head>
 <body>
 

@@ -657,25 +657,92 @@ function ver_prevCroquis(input) {
   const file = input.files[0];
   if (!file) return;
 
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    const prev = document.getElementById('ver_prev_img');
-    const ph   = document.getElementById('ver_prev_ph');
-    if (prev) { prev.src = e.target.result; prev.style.display = 'block'; }
-    if (ph)   ph.style.display = 'none';
+  ver_mostrarPreviewCroquis(file);
+}
 
-    // Mostrar botón de guardar y aviso de que falta confirmar
-    const btn = document.getElementById('ver_btn_subir');
-    if (btn) btn.style.display = 'block';
-    const msg = document.getElementById('ver_msg_croquis');
-    if (msg) { msg.textContent = '⚠️ Haz clic en "Guardar croquis" para confirmar.'; msg.style.color = '#856404'; }
+// Función para mostrar preview del croquis
+function ver_mostrarPreviewCroquis(file) {
+  // Validar dimensiones mínimas: al menos 500x800 píxeles
+  const img = new Image();
+  img.onload = function() {
+    const minWidth = 100;
+    const minHeight = 100;
 
-    // Desmarcar como ok mientras no se guarde
-    _ver_croquis_ok = false;
-    if (document.getElementById('ver_alerta_croquis')) document.getElementById('ver_alerta_croquis').style.display = 'flex';
-    if (document.getElementById('ver_ok_croquis'))    document.getElementById('ver_ok_croquis').style.display    = 'none';
+    if (this.width < minWidth || this.height < minHeight) {
+      const msg = document.getElementById('ver_msg_croquis');
+      if (msg) {
+        msg.textContent = `❌ La imagen debe ser al menos ${minWidth}x${minHeight} píxeles. Actual: ${this.width}x${this.height}.`;
+        msg.style.color = '#dc3545';
+      }
+      // Limpiar input
+      const input = document.getElementById('ver_inp_croquis');
+      if (input) input.value = '';
+      return;
+    }
+
+    // Si pasa validación, mostrar preview
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const prev = document.getElementById('ver_prev_img');
+      const ph   = document.getElementById('ver_prev_ph');
+      if (prev) { prev.src = e.target.result; prev.style.display = 'block'; }
+      if (ph)   ph.style.display = 'none';
+
+      // Mostrar botón de guardar y aviso de que falta confirmar
+      const btn = document.getElementById('ver_btn_subir');
+      if (btn) btn.style.display = 'block';
+      const msg = document.getElementById('ver_msg_croquis');
+      if (msg) { msg.textContent = '⚠️ Haz clic en "Guardar croquis" para confirmar.'; msg.style.color = '#856404'; }
+
+      // Desmarcar como ok mientras no se guarde
+      _ver_croquis_ok = false;
+      if (document.getElementById('ver_alerta_croquis')) document.getElementById('ver_alerta_croquis').style.display = 'flex';
+      if (document.getElementById('ver_ok_croquis'))    document.getElementById('ver_ok_croquis').style.display    = 'none';
+    };
+    reader.readAsDataURL(file);
   };
-  reader.readAsDataURL(file);
+  img.src = URL.createObjectURL(file);
+}
+
+// Función para redimensionar imagen a 500x800
+function redimensionarImagen(file, targetWidth, targetHeight) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = function() {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+
+      // Calcular el aspect ratio para ajustar la imagen
+      const imgAspect = this.width / this.height;
+      const targetAspect = targetWidth / targetHeight;
+
+      let drawWidth, drawHeight, offsetX, offsetY;
+
+      if (imgAspect > targetAspect) {
+        // Imagen más ancha que el target, ajustar por altura
+        drawHeight = targetHeight;
+        drawWidth = drawHeight * imgAspect;
+        offsetX = (targetWidth - drawWidth) / 2;
+        offsetY = 0;
+      } else {
+        // Imagen más alta que el target, ajustar por ancho
+        drawWidth = targetWidth;
+        drawHeight = drawWidth / imgAspect;
+        offsetX = 0;
+        offsetY = (targetHeight - drawHeight) / 2;
+      }
+
+      // Dibujar imagen escalada
+      ctx.drawImage(this, offsetX, offsetY, drawWidth, drawHeight);
+
+      canvas.toBlob(resolve, 'image/jpeg', 0.9);
+    };
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
+  });
 }
 
 // Subir el croquis al servidor via AJAX
@@ -690,14 +757,20 @@ function ver_subirCroquis() {
     return;
   }
 
-  if (msg) { msg.textContent = 'Guardando...'; msg.style.color = '#555'; }
+  if (msg) { msg.textContent = 'Procesando imagen...'; msg.style.color = '#555'; }
   if (btn) btn.disabled = true;
 
-  const fd = new FormData();
-  fd.append('folio', folio);
-  fd.append('croquis', input.files[0]);
+  // Redimensionar la imagen a 2000x1500
+  redimensionarImagen(input.files[0], 2000, 1500)
+    .then(resizedBlob => {
+      if (msg) { msg.textContent = 'Guardando...'; msg.style.color = '#555'; }
 
-  fetch('php/guardar_croquis.php', { method: 'POST', body: fd, credentials: 'same-origin' })
+      const fd = new FormData();
+      fd.append('folio', folio);
+      fd.append('croquis', resizedBlob, 'croquis.jpg'); // Nombre fijo
+
+      return fetch('php/guardar_croquis.php', { method: 'POST', body: fd, credentials: 'same-origin' });
+    })
     .then(r => r.json())
     .then(data => {
       if (btn) btn.disabled = false;
@@ -709,11 +782,115 @@ function ver_subirCroquis() {
         if (msg) { msg.textContent = '❌ ' + data.message; msg.style.color = '#dc3545'; }
       }
     })
-    .catch(() => {
+    .catch(err => {
+      console.error('Error procesando imagen:', err);
       if (btn) btn.disabled = false;
-      if (msg) { msg.textContent = '❌ Error de conexión.'; msg.style.color = '#dc3545'; }
+      if (msg) { msg.textContent = '❌ Error procesando la imagen.'; msg.style.color = '#dc3545'; }
     });
 }
+
+// =====================================================
+// PEGAR IMÁGENES CON CTRL+V
+// Permite pegar imágenes directamente en áreas de carga
+// =====================================================
+
+// Función auxiliar para manejar pegado de imágenes
+function manejarPegadoImagen(e, inputId, previewFunction, mensaje) {
+  const items = e.clipboardData?.items;
+  if (!items) return false;
+
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    if (item.type.indexOf('image') !== -1) {
+      e.preventDefault();
+
+      const file = item.getAsFile();
+      if (file) {
+        // Para croquis, validar dimensiones
+        if (inputId === 'ver_inp_croquis') {
+          const img = new Image();
+          img.onload = function() {
+            const minWidth = 200;
+            const minHeight = 100;
+
+            if (this.width < minWidth || this.height < minHeight) {
+              const msg = document.getElementById('ver_msg_croquis');
+              if (msg) {
+                msg.textContent = `❌ La imagen pegada debe ser al menos ${minWidth}x${minHeight} píxeles. Actual: ${this.width}x${this.height}.`;
+                msg.style.color = '#dc3545';
+              }
+              return;
+            }
+
+            // Si valida, asignar al input
+            asignarArchivoPegado(inputId, file, mensaje);
+          };
+          img.src = URL.createObjectURL(file);
+        } else {
+          // Para otras imágenes (fotos), asignar directamente
+          asignarArchivoPegado(inputId, file, mensaje);
+        }
+        return true; // Se encontró y manejó una imagen
+      }
+    }
+  }
+  return false;
+}
+
+// Función auxiliar para asignar archivo pegado al input
+function asignarArchivoPegado(inputId, file, mensaje) {
+  const input = document.getElementById(inputId);
+  if (input) {
+    // Crear un DataTransfer para asignar el archivo al input
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    input.files = dt.files;
+
+    // Disparar el evento change para mostrar preview
+    input.dispatchEvent(new Event('change'));
+
+    // Mostrar mensaje si se proporciona
+    if (mensaje) {
+      const msgEl = document.querySelector(mensaje.selector);
+      if (msgEl) {
+        msgEl.textContent = mensaje.texto;
+        msgEl.style.color = mensaje.color || '#007bff';
+      }
+    }
+  }
+}
+
+// Event listener global para pegar imágenes
+document.addEventListener('paste', function(e) {
+  // Solo manejar si estamos en un modal relevante
+  const modalDetalle = document.getElementById('detalleTramite');
+  const modalConstancia = document.getElementById('modalConstancia');
+  const enModalDetalle = modalDetalle && modalDetalle.classList.contains('show');
+  const enModalConstancia = modalConstancia && modalConstancia.classList.contains('show');
+
+  if (!enModalDetalle && !enModalConstancia) return;
+
+  // Intentar pegar en croquis si estamos en modal de constancia
+  if (enModalConstancia) {
+    const pegado = manejarPegadoImagen(e, 'ver_inp_croquis', null, {
+      selector: '#ver_msg_croquis',
+      texto: '🖼️ Imagen pegada. Haz clic en "Guardar croquis" para confirmar.',
+      color: '#007bff'
+    });
+    if (pegado) return;
+  }
+
+  // Intentar pegar en fotos si estamos en modal de detalle
+  if (enModalDetalle) {
+    // Primero intentar foto1
+    const pegado1 = manejarPegadoImagen(e, 'input_foto1', null, null);
+    if (pegado1) return;
+
+    // Luego foto2
+    const pegado2 = manejarPegadoImagen(e, 'input_foto2', null, null);
+    if (pegado2) return;
+  }
+});
 
 // =====================================================
 // DATATABLES — Tabla principal de trámites
