@@ -146,7 +146,8 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('c_numero_asignado').value     = (btn.dataset.numeroAsignado || '').toUpperCase();
       document.getElementById('c_tipo_asignacion').value     = (btn.dataset.tipoAsignacion || 'ASIGNACION').toUpperCase();
       document.getElementById('c_referencia_anterior').value = (btn.dataset.referenciaAnterior || '').toUpperCase();
-      document.getElementById('c_entre_calles').value        = (btn.dataset.entreCalles || '').toUpperCase();
+      document.getElementById('c_entre_calle1').value        = (btn.dataset.entreCalle1 || '').toUpperCase();
+      document.getElementById('c_entre_calle2').value        = (btn.dataset.entreCalle2 || '').toUpperCase();
       document.getElementById('c_cuenta_catastral').value    = btn.dataset.cuentaCatastral || '';
       document.getElementById('c_manzana').value             = (btn.dataset.manzana || '').toUpperCase();
       document.getElementById('c_lote').value                = (btn.dataset.lote || '').toUpperCase();
@@ -161,9 +162,9 @@ document.addEventListener('DOMContentLoaded', () => {
       if (msg)  msg.textContent = '';
       if (btnS) btnS.style.display = 'none';
 
-      croquis && croquis.trim() !== ''
-        ? ver_mostrarEstado(true, 'uploads/' + croquis)
-        : (() => {
+       croquis && croquis.trim() !== ''
+         ? ver_mostrarEstado(true, croquis)
+         : (() => {
             ver_mostrarEstado(false, null);
             const prev = document.getElementById('ver_prev_img');
             const ph   = document.getElementById('ver_prev_ph');
@@ -357,7 +358,8 @@ document.addEventListener('DOMContentLoaded', () => {
               document.getElementById('c_numero_asignado').value       = (btn.dataset.numeroAsignado || '').toUpperCase();
               document.getElementById('c_tipo_asignacion').value       = (btn.dataset.tipoAsignacion || 'ASIGNACION').toUpperCase();
               document.getElementById('c_referencia_anterior').value   = (btn.dataset.referenciaAnterior || '').toUpperCase();
-              document.getElementById('c_entre_calles').value          = (btn.dataset.entreCalles || '').toUpperCase();
+              document.getElementById('c_entre_calle1').value          = (btn.dataset.entreCalle1 || '').toUpperCase();
+              document.getElementById('c_entre_calle2').value          = (btn.dataset.entreCalle2 || '').toUpperCase();
               document.getElementById('c_cuenta_catastral').value      = btn.dataset.cuentaCatastral || '';
               document.getElementById('c_manzana').value               = (btn.dataset.manzana || '').toUpperCase();
               document.getElementById('c_lote').value                  = (btn.dataset.lote || '').toUpperCase();
@@ -370,9 +372,9 @@ document.addEventListener('DOMContentLoaded', () => {
               if (inp) inp.value = '';
               if (msgC) msgC.textContent = '';
               if (btnS) btnS.style.display = 'none';
-              croquis && croquis.trim() !== ''
-                ? ver_mostrarEstado(true, 'uploads/' + croquis)
-                : (() => {
+               croquis && croquis.trim() !== ''
+                 ? ver_mostrarEstado(true, croquis)
+                 : (() => {
                     ver_mostrarEstado(false, null);
                     const prev = document.getElementById('ver_prev_img');
                     const ph   = document.getElementById('ver_prev_ph');

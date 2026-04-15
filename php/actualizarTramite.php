@@ -11,8 +11,8 @@
  */
 
 // Suprimir warnings para que nunca contaminen la respuesta JSON
-error_reporting(0);
-ini_set('display_errors', 0);
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
 // Limpiar cualquier output previo
 if (ob_get_length()) ob_clean();
@@ -62,8 +62,10 @@ $solo_constancia     = isset($_POST['solo_constancia']) && $_POST['solo_constanc
 $numero_asignado     = trim(isset($_POST['numero_asignado']) ? $_POST['numero_asignado'] : '');
 $tipo_asignacion     = trim(isset($_POST['tipo_asignacion']) ? $_POST['tipo_asignacion'] : 'Asignacion');
 $referencia_anterior = trim(isset($_POST['referencia_anterior']) ? $_POST['referencia_anterior'] : '');
-$entre_calles        = mb_strtoupper(trim(isset($_POST['entre_calles']) ? $_POST['entre_calles'] : ''), 'UTF-8');
+$entre_calle1        = mb_strtoupper(trim(isset($_POST['entre_calle1']) ? $_POST['entre_calle1'] : ''), 'UTF-8');
+$entre_calle2        = mb_strtoupper(trim(isset($_POST['entre_calle2']) ? $_POST['entre_calle2'] : ''), 'UTF-8');
 $cuenta_catastral_c  = trim(isset($_POST['cuenta_catastral_constancia']) ? $_POST['cuenta_catastral_constancia'] : '');
+$superficie          = trim(isset($_POST['superficie_constancia']) ? $_POST['superficie_constancia'] : '');
 $manzana             = trim(isset($_POST['manzana']) ? $_POST['manzana'] : '');
 $lote                = trim(isset($_POST['lote']) ? $_POST['lote'] : '');
 $fecha_constancia    = trim(isset($_POST['fecha_constancia']) ? $_POST['fecha_constancia'] : date('Y-m-d'));
@@ -134,12 +136,14 @@ try {
     if ($solo_constancia) {
         $uid = (int) $_SESSION['id'];
 
-        $sql = "UPDATE tramites SET 
+        $sql = "UPDATE tramites SET
                 numero_asignado     = ?,
                 tipo_asignacion     = ?,
                 referencia_anterior = ?,
-                entre_calles        = ?,
+                entre_calle1        = ?,
+                entre_calle2        = ?,
                 cuenta_catastral    = ?,
+                superficie          = ?,
                 manzana             = ?,
                 lote                = ?,
                 fecha_constancia    = ?
@@ -148,12 +152,14 @@ try {
         $stmtUp = $conn->prepare($sql);
         if (!$stmtUp) throw new Exception("Error prepare UPDATE: " . $conn->error);
 
-        $stmtUp->bind_param("ssssssssii",
+        $stmtUp->bind_param("ssssssssssii",
             $numero_asignado,
             $tipo_asignacion,
             $referencia_anterior,
-            $entre_calles,
+            $entre_calle1,
+            $entre_calle2,
             $cuenta_catastral_c,
+            $superficie,
             $manzana,
             $lote,
             $fecha_constancia,
@@ -273,7 +279,8 @@ try {
             numero_asignado     = ?,
             tipo_asignacion     = ?,
             referencia_anterior = ?,
-            entre_calles        = ?,
+            entre_calle1        = ?,
+            entre_calle2        = ?,
             cuenta_catastral    = ?,
             manzana             = ?,
             lote                = ?,
@@ -282,7 +289,8 @@ try {
         $params[] = $numero_asignado;
         $params[] = $tipo_asignacion;
         $params[] = $referencia_anterior ?: null;
-        $params[] = $entre_calles;
+        $params[] = $entre_calle1;
+        $params[] = $entre_calle2;
         $params[] = $cuenta_catastral_c ?: null;
         $params[] = $manzana ?: null;
         $params[] = $lote ?: null;

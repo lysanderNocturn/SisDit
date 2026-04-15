@@ -437,7 +437,7 @@ window.onpopstate = function () {
         <button type="submit" class="btn btn-primary w-100">
             <i class="bi bi-funnel"></i> Filtrar
         </button>
-        <a href="DashAprobar.php" class="btn btn-outline-secondary">
+        <a href="DashVer.php" class="btn btn-outline-secondary">
             Limpiar
         </a>
     </div>
@@ -505,7 +505,8 @@ window.onpopstate = function () {
                     data-numero-asignado="<?= htmlspecialchars($t['numero_asignado'] ?? '') ?>"
                     data-tipo-asignacion="<?= htmlspecialchars($t['tipo_asignacion'] ?? 'Asignacion') ?>"
                     data-referencia-anterior="<?= htmlspecialchars($t['referencia_anterior'] ?? '') ?>"
-                    data-entre-calles="<?= htmlspecialchars($t['entre_calles'] ?? '') ?>"
+                    data-entre-calle1="<?= htmlspecialchars($t['entre_calle1'] ?? '') ?>"
+                    data-entre-calle2="<?= htmlspecialchars($t['entre_calle2'] ?? '') ?>"
                     data-manzana="<?= htmlspecialchars($t['manzana'] ?? '') ?>"
                     data-lote="<?= htmlspecialchars($t['lote'] ?? '') ?>"
                     data-fecha-constancia="<?= $t['fecha_constancia'] ?? date('Y-m-d') ?>"
@@ -525,12 +526,13 @@ window.onpopstate = function () {
                     data-numero-asignado="<?= htmlspecialchars($t['numero_asignado'] ?? '') ?>"
                     data-tipo-asignacion="<?= htmlspecialchars($t['tipo_asignacion'] ?? 'Asignacion') ?>"
                     data-referencia-anterior="<?= htmlspecialchars($t['referencia_anterior'] ?? '') ?>"
-                    data-entre-calles="<?= htmlspecialchars($t['entre_calles'] ?? '') ?>"
+                    data-entre-calle1="<?= htmlspecialchars($t['entre_calle1'] ?? '') ?>"
+                    data-entre-calle2="<?= htmlspecialchars($t['entre_calle2'] ?? '') ?>"
                     data-manzana="<?= htmlspecialchars($t['manzana'] ?? '') ?>"
                     data-lote="<?= htmlspecialchars($t['lote'] ?? '') ?>"
                     data-fecha-constancia="<?= $t['fecha_constancia'] ?? date('Y-m-d') ?>"
                     data-cuenta-catastral="<?= htmlspecialchars($t['cuenta_catastral'] ?? '') ?>"
-                    data-croquis="<?= htmlspecialchars(isset($t['croquis_archivo']) ? $t['croquis_archivo'] : '') ?>"
+                    data-croquis="<?= htmlspecialchars(isset($t['croquis_archivo']) && !empty($t['croquis_archivo']) ? (strpos($t['croquis_archivo'], '.') === 0 ? $t['croquis_archivo'] : 'uploads/' . $t['croquis_archivo']) : '') ?>"
                     title="Generar Constancia de Numero Oficial"
                 >
                     <i class="bi bi-file-earmark-check"></i> Constancia
@@ -913,8 +915,8 @@ window.onpopstate = function () {
 
 <!-- MODAL: CONSTANCIA DE NUMERO OFICIAL -->
 <div class="modal fade" id="modalConstancia" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
-  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-    <div class="modal-content shadow">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content shadow" style="max-height: 80vh; overflow-y: auto;">
       <div class="modal-header bg-success text-white">
         <h5 class="modal-title">
           <i class="bi bi-file-earmark-check me-2"></i> Constancia de Número Oficial
@@ -1003,17 +1005,29 @@ window.onpopstate = function () {
                 <!-- Entre calles -->
                 <div class="col-md-6">
                   <label class="form-label fw-bold">Entre Calles <span class="text-danger">*</span></label>
-                  <input type="text" class="form-control input-mayusculas" name="entre_calles" id="c_entre_calles" 
-                         placeholder="Ej: NINOS HEROES Y LA PEDRERA" 
-                         pattern="[A-Za-z0-9\s\-]+" title="Solo letras, numeros, espacios y guiones" required>
+                  <input type="text" class="form-control input-mayusculas" name="entre_calle1" id="c_entre_calle1" 
+                         placeholder="Ej: NINOS HEROES Y JUAREZ" pattern="[A-Za-z0-9\s\-]+" title="Solo letras, numeros, espacios y guiones" required>
                 </div>
-                
+                <div class="col-md-6">
+                  <label class="form-label fw-bold invisible">Entre Calles (continuación) <span class="text-danger invisible">*</span></label>
+                  <input type="text" class="form-control input-mayusculas" name="entre_calle2" id="c_entre_calle2" 
+                         placeholder="Ej: INDEPENDENCIA Y HIDALGO" pattern="[A-Za-z0-9\s\-]*" title="Solo letras, numeros, espacios y guiones">
+                </div>
+                </div>
+              </div>
+
+              <div class="row g-3">
                 <!-- Cuenta catastral (solo numeros) -->
                 <div class="col-md-6">
                   <label class="form-label fw-bold">Cuenta Catastral <span class="text-danger">*</span></label>
                   <input type="text" class="form-control input-solo-numeros" name="cuenta_catastral_constancia" id="c_cuenta_catastral" 
                          placeholder="Ej: 70104010022000" pattern="[0-9]+" 
                          title="Solo numeros" required>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-bold">Superficie (m²) <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control input-solo-numeros" name="superficie_constancia" id="c_superficie_constancia" 
+                         placeholder="Ej: 250" pattern="[0-9]+" title="Solo numeros" required>
                 </div>
                 
                 <!-- Manzana -->
@@ -1024,27 +1038,28 @@ window.onpopstate = function () {
                          title="Solo letras, numeros, espacios y guiones">
                 </div>
                 
+                
                 <!-- Lote -->
                 <div class="col-md-3">
                   <label class="form-label fw-bold">Lote</label>
-                  <input type="text" class="form-control input-mayusculas" name="lote" id="c_lote" 
+                  <input type="text" class="form-control input-mayusculas" name="lote" id="c_lote"
                          placeholder="Opcional" pattern="[A-Za-z0-9\s\-]*"
                          title="Solo letras, numeros, espacios y guiones">
                 </div>
-                
+
                 <!-- Fecha de constancia -->
                 <div class="col-md-6">
                   <label class="form-label fw-bold">Fecha de Expedición <span class="text-danger">*</span></label>
-                  <input type="date" class="form-control" name="fecha_constancia" id="c_fecha_constancia" 
+                  <input type="date" class="form-control" name="fecha_constancia" id="c_fecha_constancia"
                          value="<?= date('Y-m-d') ?>" required>
                 </div>
+                  
               </div>
             </div>
           </div>
 
           <!-- ── CROQUIS ── -->
-<div class="card border-secondary mt-3">
-    <div class="card-header bg-secondary text-white d-flex align-items-center gap-2">
+    <div class="card-header bg-secondary text-white d-flex align-items-center gap-2 mt-3">
         <i class="bi bi-map-fill"></i>
         <span class="fw-bold">Croquis del Predio</span>
         <span class="badge bg-warning text-dark ms-1">Requerido para imprimir</span>
@@ -1079,13 +1094,9 @@ window.onpopstate = function () {
                     <span id="ver_prev_ph" class="text-muted small text-center px-2">
                         <i class="bi bi-image fs-3 d-block mb-1"></i>Vista previa del croquis
                     </span>
-                    <img id="ver_prev_img" src="" style="display:none;width:100%;max-height:400px;object-fit:contain;">
+                    <img id="ver_prev_img" src="" style="display:none;width:100%;max-height:100px;object-fit:contain;">
                 </div>
             </div>
-        </div>
-    </div>
-</div>
-
         </form>
       </div>
       <div class="modal-footer">
@@ -1285,7 +1296,8 @@ function abrirModalConstancia(btn) {
     }
     
     document.getElementById('c_referencia_anterior').value = btn.getAttribute('data-referencia-anterior') || '';
-    document.getElementById('c_entre_calles').value = btn.getAttribute('data-entre-calles') || '';
+    document.getElementById('c_entre_calle1').value = btn.getAttribute('data-entre-calle1') || '';
+    document.getElementById('c_entre_calle2').value = btn.getAttribute('data-entre-calle2') || '';
     document.getElementById('c_cuenta_catastral').value = btn.getAttribute('data-cuenta-catastral') || '';
     document.getElementById('c_manzana').value = btn.getAttribute('data-manzana') || '';
     document.getElementById('c_lote').value = btn.getAttribute('data-lote') || '';
@@ -1301,7 +1313,7 @@ function abrirModalConstancia(btn) {
     if (croquis && croquis.trim()) {
         alertaCroquis.style.display = 'none';
         okCroquis.style.display = 'flex';
-        prevImg.src = 'uploads/' + croquis;
+        prevImg.src = croquis;
         prevImg.style.display = 'block';
         prevPh.style.display = 'none';
     } else {
@@ -1358,7 +1370,8 @@ function cargarDatosAnterioresVer() {
         }
       }
       if (c.referencia_anterior) document.getElementById('c_referencia_anterior').value  = c.referencia_anterior;
-      if (c.entre_calles)        document.getElementById('c_entre_calles').value          = c.entre_calles;
+      if (c.entre_calle1)        document.getElementById('c_entre_calle1').value          = c.entre_calle1;
+      if (c.entre_calle2)        document.getElementById('c_entre_calle2').value          = c.entre_calle2;
       if (c.manzana)             document.getElementById('c_manzana').value               = c.manzana;
       if (c.lote)                document.getElementById('c_lote').value                  = c.lote;
       if (t.cuenta_catastral)    document.getElementById('c_cuenta_catastral').value      = t.cuenta_catastral;
@@ -1373,7 +1386,7 @@ function cargarDatosAnterioresVer() {
         // Mostrar imagen en vista previa
         alertaCroquis.style.display = 'none';
         okCroquis.style.display     = 'flex';
-        prevImg.src                 = 'uploads/' + croquis;
+        prevImg.src                 = croquis;
         prevImg.style.display       = 'block';
         prevPh.style.display        = 'none';
 

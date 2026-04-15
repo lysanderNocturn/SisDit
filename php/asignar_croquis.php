@@ -37,14 +37,13 @@ if (!preg_match('/^(\d{1,4})\/(\d{4})$/', $folio_destino, $m)) {
 $folio_numero = (int)$m[1];
 $folio_anio   = (int)$m[2];
 
-// Validar nombre de archivo (solo caracteres seguros, sin rutas)
-if (empty($croquis_archivo) || preg_match('/[\/\\\\]/', $croquis_archivo)) {
-    echo json_encode(['success' => false, 'message' => 'Nombre de archivo invalido']);
+// Validar que el archivo existe
+if (empty($croquis_archivo)) {
+    echo json_encode(['success' => false, 'message' => 'Archivo de croquis no especificado']);
     exit;
 }
 
-// Verificar que el archivo realmente existe en uploads/
-$ruta = "../uploads/" . $croquis_archivo;
+$ruta = "../" . $croquis_archivo;
 if (!file_exists($ruta)) {
     echo json_encode(['success' => false, 'message' => 'El archivo del croquis no existe']);
     exit;

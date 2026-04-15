@@ -355,7 +355,8 @@ if (!empty($av['folio_salida_numero'])) {
         $num_asig  = isset($av['numero_asignado'])     ? $av['numero_asignado']     : '';
         $tipo_asig = isset($av['tipo_asignacion'])     ? $av['tipo_asignacion']     : 'ASIGNACION';
         $ref_ant   = isset($av['referencia_anterior']) ? $av['referencia_anterior'] : '';
-        $entre_c   = isset($av['entre_calles'])        ? $av['entre_calles']        : '';
+        $entre_calle1 = isset($av['entre_calle1'])    ? $av['entre_calle1']        : '';
+        $entre_calle2 = isset($av['entre_calle2'])    ? $av['entre_calle2']        : '';
         $mzav      = isset($av['manzana'])             ? $av['manzana']             : '';
         $loteav    = isset($av['lote'])                ? $av['lote']                : '';
         $fec_const = isset($av['fecha_constancia'])    ? $av['fecha_constancia']    : date('Y-m-d');
@@ -390,7 +391,7 @@ data-folio-salida-anio="<?= $av['folio_salida_anio'] ?>"
             data-lote="<?= htmlspecialchars($loteav) ?>"
             data-fecha-constancia="<?= htmlspecialchars($fec_const) ?>"
             data-cuenta-catastral="<?= htmlspecialchars($cta_cat) ?>"
-            data-croquis="<?= htmlspecialchars(isset($av['croquis_archivo']) ? $av['croquis_archivo'] : '') ?>"
+            data-croquis="<?= htmlspecialchars(isset($av['croquis_archivo']) && !empty($av['croquis_archivo']) ? (strpos($av['croquis_archivo'], '.') === 0 ? $av['croquis_archivo'] : 'uploads/' . $av['croquis_archivo']) : '') ?>"
             data-bs-toggle="modal" data-bs-target="#modalConstanciaSec"
             title="Editar e imprimir constancia para firma">
             <i class="bi bi-file-earmark-check me-1"></i>Constancia
@@ -549,7 +550,7 @@ data-folio-salida-anio="<?= $av['folio_salida_anio'] ?>"
 
               <div class="col-md-6">
                 <strong>Entre Calles:</strong><br>
-                <span id="cs_entre_calles"></span>
+                <span id="cs_entre_calle1"></span> y <span id="cs_entre_calle2"></span>
               </div>
 
               <div class="col-md-6">

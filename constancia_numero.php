@@ -112,6 +112,7 @@ $reglamentos = [
 $fecha_constancia = date('Y-m-d');
 $tipo_asignacion  = isset($t['tipo_asignacion'])  ? $t['tipo_asignacion']  : 'ASIGNACION';
 $croquis_archivo  = isset($t['croquis_archivo'])  ? $t['croquis_archivo']  : '';
+$croquis_path = $croquis_archivo && strpos($croquis_archivo, '.') === 0 ? $croquis_archivo : ('uploads/' . $croquis_archivo);
 
 // Formatear fecha
 $meses = ['','ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
@@ -251,11 +252,15 @@ else                     $back = 'DashVer.php';
             text-transform:uppercase; 
         }
         
-        .numero-grande { 
-            font-size:26pt; 
-            font-weight:bold; 
-            text-align:center; 
-            color:#7b0f2b; 
+        .numero-grande {
+            font-size: 200pt;
+            font-weight:bold;
+            text-align:center;
+            color:#7b0f2b;
+            width: 280px;
+            height: 50px;
+            background: rgba(123,15,43,0.05);
+            border-radius: 8px;
         }
         
         .referencia-anterior { 
@@ -306,9 +311,10 @@ else                     $back = 'DashVer.php';
         
         .seccion-nombre .valor-nombre { 
             padding:10px 12px; 
+            margin:auto;
             flex:1; 
             font-weight:bold; 
-            font-size:12pt; 
+            font-size:15pt; 
             text-transform:uppercase; 
         }
 
@@ -329,7 +335,10 @@ else                     $back = 'DashVer.php';
             padding:8px 12px; 
             text-align:center; 
             font-weight:bold; 
-            font-size:11pt; 
+            font-size:11pt;
+        }
+        .valor-fecha {
+            text-transform: uppercase;
         }
 
         .notas { 
@@ -388,6 +397,9 @@ else                     $back = 'DashVer.php';
             font-size:9pt; 
             margin-top:2px; 
         }
+        .municipio {
+            text-transform: uppercase;
+        }
         
         .ccp { 
             margin-top:20px; 
@@ -421,7 +433,7 @@ else                     $back = 'DashVer.php';
         .croquis-info { 
             display:flex; 
             justify-content:space-between; 
-            font-size:9pt; 
+            font-size:15pt; 
             margin-bottom:5px; 
             border-bottom:1px solid #7b0f2b; 
             padding-bottom:5px; 
@@ -617,7 +629,7 @@ else                     $back = 'DashVer.php';
             /* Comprimir elementos de página 1 para dar espacio a la firma */
             .titulo-principal { margin: 8px 0 6px !important; font-size: 14pt !important; }
             .tabla-datos td, .tabla-datos th { padding: 3px 6px !important; font-size: 9pt !important; }
-            .seccion-nombre .valor-nombre { font-size: 10pt !important; padding: 6px 10px !important; }
+            .seccion-nombre .valor-nombre { font-size: 15pt !important; padding: 6px 10px !important; }
             .seccion-nombre .label-nombre { padding: 6px 10px !important; }
             .seccion-fecha .valor-fecha { padding: 5px 10px !important; font-size: 10pt !important; }
             .notas { padding: 5px 7px !important; margin: 6px 0 !important; }
@@ -695,56 +707,63 @@ else                     $back = 'DashVer.php';
 <div class="container">
     <div class="header">
         <div class="header-left">
-            <img src="logos/logo_urbano.jpeg" alt="Logo">
+            <img src="logos/LogoDepFondo.png" alt="Logo"> 
             <div>
                 <div class="titulo-dep">Dirección de Planeación<br>y Desarrollo Urbano</div>
                 <div class="subtitulo">Rincón de Romos</div>
             </div>
         </div>
-        <div class="header-right"><img src="logos/logo_presi.jpeg" alt="Logo"></div>
+        <div class="header-right"><img src="logos/logoPresi.png" alt="Logo"></div>
     </div>
 
     <div class="folio-line">FOLIO: <span><?= htmlspecialchars($folio_salida_display) ?></span></div>
     <h1 class="titulo-principal">CONSTANCIA DE NUMERO OFICIAL</h1>
 
-    <table class="tabla-datos">
-        <tr class="header-row">
+    <table class="tabla-datos" cellspacing="0" cellpadding="0">
+        <tr class="header-row">        
+            <td style="background:#f5e6e9; font-weight:bold; text-align:center; color:#7b0f2b; font-size:9pt;" colspan="2">TIPO DE ASIGNACIÓN</td>
             <td><span class="checkbox <?= $es_asignacion ? 'checked' : '' ?>"></span> ASIGNACIÓN</td>
-            <td><span class="checkbox <?= $es_rectificacion ? 'checked' : '' ?>"></span> RECTIFICACIÓN</td>
-            <td><span class="checkbox <?= $es_reposicion ? 'checked' : '' ?>"></span> REPOSICIÓN</td>
+            <td colspan="1"><span class="checkbox <?= $es_rectificacion ? 'checked' : '' ?>"></span> RECTIFICACIÓN</td>
+            <td colspan="1"><span class="checkbox <?= $es_reposicion ? 'checked' : '' ?>"></span> REPOSICIÓN</td>
         </tr>
         <tr>
-            <td colspan="2" class="label" style="vertical-align:middle;">SE ASIGNA EL NÚMERO</td>
-            <td class="numero-grande" rowspan="2"><?= htmlspecialchars($t['numero_asignado']) ?></td>
+            <td colspan="4" class="label" style="vertical-align:middle;">SE ASIGNA EL NÚMERO</td>
+            <td class="numero-grande" style="font-size: 25px;" rowspan="2"><?= htmlspecialchars($t['numero_asignado']) ?></td>
         </tr>
         <tr>
-            <td colspan="2" class="referencia-anterior">
+            <td colspan="4" class="referencia-anterior">
                 REFERENCIA ANTERIOR: <?= !empty($t['referencia_anterior']) ? htmlspecialchars($t['referencia_anterior']) : '—' ?>
             </td>
         </tr>
-        <tr><td class="label">CALLE:</td><td colspan="2" class="valor"><?= htmlspecialchars($t['direccion']) ?></td></tr>
-        <tr><td class="label">ENTRE CALLES:</td><td colspan="2" class="valor"><?= htmlspecialchars(isset($t['entre_calles']) ? $t['entre_calles'] : '') ?></td></tr>
-        <tr>
-            <td class="label">UBICACIÓN</td>
-            <td style="text-align:center;">MANZANA<br><strong><?= htmlspecialchars(isset($t['manzana']) ? $t['manzana'] : '—') ?></strong></td>
-            <td style="text-align:center;">LOTE<br><strong><?= htmlspecialchars(isset($t['lote']) ? $t['lote'] : '—') ?></strong></td>
+        <tr><td class="label">CALLE:</td><td colspan=4" class="valor"><?= htmlspecialchars($t['direccion']) ?></td></tr>
+        <tr ">
+            <td class="label">ENTRE CALLES:</td>
+            <td style="text-align:center;" colspan="3"><strong><?= htmlspecialchars(isset($t['entre_calle1']) ? $t['entre_calle1'] : '—') ?></strong></td>
+            <td style="text-align:center;" colspan="2"><strong><?= htmlspecialchars(isset($t['entre_calle2']) ? $t['entre_calle2'] : '—') ?></strong></td>
         </tr>
-        <tr><td class="label">COLONIA Y/O FRACCIONAMIENTO</td><td colspan="2" class="valor"><?= htmlspecialchars(isset($t['colonia']) ? $t['colonia'] : $t['localidad']) ?></td></tr>
-        <tr><td class="label">POBLADO</td><td colspan="2" class="valor"><?= htmlspecialchars(isset($config['municipio_nombre']) ? $config['municipio_nombre'] : 'RINCÓN DE ROMOS') ?>, AGS.</td></tr>
-        <tr><td class="label">CODIGO POSTAL</td><td colspan="2" class="valor"><?= htmlspecialchars(isset($t['cp']) ? $t['cp'] : '20400') ?></td></tr>
-        <tr><td class="label">CUENTA CATASTRAL No.</td><td colspan="2" class="valor"><?= htmlspecialchars($t['cuenta_catastral']) ?></td></tr>
+        <tr>
+            <td class="label">UBICACION:</td>
+            <td style="text-align:center;">MANZANA</td>
+            <td style="text-align:center;"><strong><?= htmlspecialchars(isset($t['manzana']) ? $t['manzana'] : '—') ?></strong></td>
+            <td style="text-align:center;">LOTE</td>
+            <td style="text-align:center;"><strong><?= htmlspecialchars(isset($t['lote']) ? $t['lote'] : '—') ?></strong></td>
+        </tr>
+        <tr><td class="label">COLONIA Y/O FRACCIONAMIENTO</td><td colspan="4" class="valor"><?= htmlspecialchars(isset($t['colonia']) ? $t['colonia'] : $t['localidad']) ?></td></tr>
+        <tr><td class="label">POBLADO Y/O DELEGACIÓN</td><td colspan="4" class="valor"><?= htmlspecialchars(isset($config['municipio_nombre']) ? $config['municipio_nombre'] : 'RINCON DE ROMOS') ?>, AGS.</td></tr>
+        <tr><td class="label">CODIGO POSTAL</td><td colspan="4" class="valor"><?= htmlspecialchars(isset($t['cp']) ? $t['cp'] : '20400') ?></td></tr>
+        <tr><td class="label">CUENTA CATASTRAL No.</td><td colspan="4" class="valor"><?= htmlspecialchars($t['cuenta_catastral']) ?></td></tr>
     </table>
 
     <div class="seccion-nombre">
         <div class="label-nombre">SE EXTIENDE A NOMBRE DE</div>
-        <div class="valor-nombre"><?= htmlspecialchars($t['propietario']) ?></div>
+        <div class="valor-nombre" style="text-align: center;"><?= htmlspecialchars($t['propietario']) ?></div>
     </div>
 
     <div class="seccion-fecha">
         <div class="label-fecha">LUGAR Y FECHA DE EXPEDICIÓN:</div>
         <div class="valor-fecha">
             <?= $fecha_formateada ?><br>
-            <?= strtoupper(isset($config['municipio_nombre']) ? $config['municipio_nombre'] : 'RINCÓN DE ROMOS') ?>, AGS.
+            <?= strtoupper(isset($config['municipio_nombre']) ? $config['municipio_nombre'] : 'RINCON DE ROMOS') ?>, AGS.
         </div>
     </div>
 
@@ -752,7 +771,7 @@ else                     $back = 'DashVer.php';
         <div class="notas-titulo">NOTAS:</div>
         <p>1.- EL <span class="destacado">NUMERO OFICIAL</span> DEBERÁ COLOCARSE EN <span class="destacado">PARTE VISIBLE</span> DEL FRENTE DEL PREDIO, Y DEBERÁ DE SER CLARAMENTE LEGIBLE, A UN MÍNIMO DE 15 MTS DE DISTANCIA.</p>
         <p>2.- ESTE DOCUMENTO <span class="destacado">NO CONSTITUYE APEO O DESLINDE AL RESPECTO DEL INMUEBLE, NI ACREDITA LA PROPIEDAD O POSESIÓN DEL MISMO.</span></p>
-        <p>3.- SE FUNDAMENTA LA CONSTANCIA EN EL <span class="destacado">ARTÍCULO 34 FRACC 11 INCISO I DEL BANDO DE POLICÍA Y GOBIERNO DE RINCÓN DE ROMOS, AGS.</span></p>
+        <p>3.- SE FUNDAMENTA LA CONSTANCIA EN EL <span class="destacado">ARTÍCULO 34 FRACC 11 INCISO I DEL BANDO DE POLICÍA Y GOBIERNO DE RINCON DE ROMOS, AGS.</span></p>
     </div>
 
     <div class="atentamente">A T E N T A M E N T E:</div>
@@ -760,30 +779,33 @@ else                     $back = 'DashVer.php';
         <div class="linea"></div>
         <div class="nombre-director"><?= htmlspecialchars(isset($config['director_nombre']) ? $config['director_nombre'] : 'DIRECTOR DE PLANEACIÓN Y DESARROLLO URBANO') ?></div>
         <div class="cargo-director"><?= htmlspecialchars(isset($config['director_cargo']) ? $config['director_cargo'] : 'DIRECTOR DE PLANEACIÓN Y DESARROLLO URBANO') ?>.</div>
-        <div class="municipio">DEL MUNICIPIO DE <?= strtoupper(isset($config['municipio_nombre']) ? $config['municipio_nombre'] : 'RINCÓN DE ROMOS') ?>, AGS.</div>
+        <div class="municipio">DEL MUNICIPIO DE <?= strtoupper(isset($config['municipio_nombre']) ? $config['municipio_nombre'] : 'RINCON DE ROMOS') ?>, AGS.</div>
     </div>
     <div class="ccp"><em>C.C.P. ARCHIVO.</em></div>
 </div>
 
 <!-- ══ PÁGINA 2: CROQUIS + REGLAMENTO ══ -->
 <div class="pagina-croquis">
-    <div class="header" style="margin-bottom:3px;padding-bottom:3px;">
+    <div class="header">
         <div class="header-left">
-            <img src="logos/logo_urbano.jpeg" alt="Logo" style="height:50px;">
-            <div><div class="titulo-dep" style="font-size:11pt;">Dirección de Planeación<br>y Desarrollo Urbano</div><div class="subtitulo" style="font-size:8pt;">Rincón de Romos</div></div>
+            <img src="logos/LogoDepFondo.png" alt="Logo"> 
+            <div>
+                <div class="titulo-dep">Dirección de Planeación<br>y Desarrollo Urbano</div>
+                <div class="subtitulo">Rincón de Romos</div>
+            </div>
         </div>
-        <div class="header-right"><img src="logos/logo_presi.jpeg" alt="Logo" style="height:50px;"></div>
+        <div class="header-right"><img src="logos/logoPresi.png" alt="Logo"></div>
     </div>
     <div class="croquis-info" style="margin-bottom:3px;padding-bottom:3px;">
-        <span><strong>FOLIO SAL.:</strong> <?= htmlspecialchars($folio_salida_display) ?></span>
+        <span><strong>FOLIO:</strong> <?= htmlspecialchars($folio_salida_display) ?></span>
         <span><strong>PROPIETARIO:</strong> <?= htmlspecialchars($t['propietario']) ?></span>
         <span><strong>CALLE:</strong> <?= htmlspecialchars($t['direccion']) ?></span>
     </div>
     <div class="croquis-titulo" style="margin:3px 0 2px;">CROQUIS DE UBICACIÓN DEL PREDIO</div>
     <div class="croquis-subtitulo" style="margin-bottom:5px;">El croquis es de carácter ilustrativo y no constituye deslinde ni apeo del inmueble.</div>
     <div class="croquis-marco" id="croquis-marco" style="min-height:400px;max-height:450px;">
-        <?php if (!empty($croquis_archivo) && file_exists('uploads/' . $croquis_archivo)): ?>
-            <img src="uploads/<?= htmlspecialchars($croquis_archivo) ?>" id="img-croquis" alt="Croquis" style="max-height:450px;">
+        <?php if (!empty($croquis_archivo) && file_exists($croquis_path)): ?>
+            <img src="<?= htmlspecialchars($croquis_path) ?>" id="img-croquis" alt="Croquis" style="max-height:450px;">
         <?php else: ?>
             <div id="croquis-placeholder" style="text-align:center;color:#aaa;padding:20px;">
                 <div style="font-size:2rem;margin-bottom:5px;">🗺️</div>
@@ -814,8 +836,8 @@ else                     $back = 'DashVer.php';
         <span id="panel-toggle-ico">▲</span>
     </div>
     <div class="panel-body" id="panel-body">
-        <?php if (!empty($croquis_archivo) && file_exists('uploads/'.$croquis_archivo)): ?>
-            <img src="uploads/<?= htmlspecialchars($croquis_archivo) ?>" class="preview-mini" id="mini-prev">
+        <?php if (!empty($croquis_archivo) && file_exists($croquis_path)): ?>
+            <img src="<?= htmlspecialchars($croquis_path) ?>" class="preview-mini" id="mini-prev">
             <p class="msg ok">✅ Croquis cargado. Puedes reemplazarlo.</p>
         <?php else: ?>
             <img src="" class="preview-mini" id="mini-prev" style="display:none;">

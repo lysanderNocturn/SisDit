@@ -43,7 +43,7 @@ $sql = "SELECT
             t.predial_archivo, t.formato_constancia,
             t.foto1_archivo, t.foto2_archivo, t.croquis_archivo,
             t.comentario_sin_doc, t.numero_asignado, t.tipo_asignacion,
-            t.referencia_anterior, t.entre_calles, t.cuenta_catastral,
+            t.referencia_anterior, t.entre_calle1, t.entre_calle2, t.cuenta_catastral,
             t.manzana, t.lote, t.fecha_constancia,
             t.tipo_tramite_id, tt.nombre AS tipo_tramite_nombre
         FROM tramites t

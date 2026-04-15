@@ -34,6 +34,23 @@ if (!preg_match('/^(\d{1,4})\/(\d{4})$/', $folio, $m)) {
 }
 $folio_numero = (int)$m[1];
 $folio_anio   = (int)$m[2];
+$folio_formatted = str_replace('/', '_', $folio);
+
+// Obtener croquis actual para eliminarlo si existe
+$stmt = $conn->prepare("SELECT croquis_archivo FROM tramites WHERE folio_numero=? AND folio_anio=?");
+$stmt->bind_param("ii", $folio_numero, $folio_anio);
+$stmt->execute();
+$result = $stmt->get_result();
+$current_croquis = $result->fetch_assoc()['croquis_archivo'] ?? '';
+$stmt->close();
+
+// Si hay croquis anterior, eliminar el archivo
+if (!empty($current_croquis)) {
+    $old_path = "../" . $current_croquis;
+    if (file_exists($old_path)) {
+        unlink($old_path);
+    }
+}
 
 // Verificar que venga archivo
 if (!isset($_FILES['croquis']) || $_FILES['croquis']['error'] !== UPLOAD_ERR_OK) {
@@ -51,18 +68,19 @@ if ($_FILES['croquis']['size'] > 10485760) { // 10MB
     exit;
 }
 
-$carpeta = "../uploads/";
+$carpeta = "../.private/{$folio_formatted}/croquis/";
 if (!is_dir($carpeta)) mkdir($carpeta, 0755, true);
 
 $nombre = 'croquis_' . uniqid() . '_' . time() . '.' . $ext;
-if (!move_uploaded_file($_FILES['croquis']['tmp_name'], $carpeta . $nombre)) {
+$relative_path = ".private/{$folio_formatted}/croquis/{$nombre}";
+if (!move_uploaded_file($_FILES['croquis']['tmp_name'], "../" . $relative_path)) {
     echo json_encode(array('success'=>false,'message'=>'Error al guardar la imagen'));
     exit;
 }
 
 // Actualizar en BD
 $stmt = $conn->prepare("UPDATE tramites SET croquis_archivo=? WHERE folio_numero=? AND folio_anio=?");
-$stmt->bind_param("sii", $nombre, $folio_numero, $folio_anio);
+$stmt->bind_param("sii", $relative_path, $folio_numero, $folio_anio);
 if (!$stmt->execute()) {
     echo json_encode(array('success'=>false,'message'=>'Error al guardar en BD'));
     exit;
@@ -72,7 +90,7 @@ $stmt->close();
 // Log
 $uid = (int)$_SESSION['id'];
 $ip  = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '';
-$det = "Croquis cargado para folio: $folio | Archivo: $nombre";
+$det = "Croquis cargado para folio: $folio | Archivo: $relative_path";
 $log = $conn->prepare("INSERT INTO logs_actividad (usuario_id, accion, tabla_afectada, detalles, ip_address) VALUES (?, 'Croquis constancia', 'tramites', ?, ?)");
 $log->bind_param("iss", $uid, $det, $ip);
 $log->execute();
@@ -81,6 +99,6 @@ $log->close();
 echo json_encode(array(
     'success'  => true,
     'message'  => 'Croquis guardado correctamente',
-    'archivo'  => $nombre,
-    'url'      => '../uploads/' . $nombre
+    'archivo'  => $relative_path,
+    'url'      => '../' . $relative_path
 ));
