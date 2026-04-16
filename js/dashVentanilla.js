@@ -257,11 +257,11 @@ const reqPorTramite={
   3:{titulo:'Fusión de Predios',documentos:['ine','escritura','predial'],nota:''},
   4:{titulo:'Subdivisión de Predio',documentos:['ine','escritura','predial'],nota:''},
   5:{titulo:'Informe CU',documentos:['ine'],nota:'Requiere cuenta catastral.'},
-  6:{titulo:'Licencia de Construcción',documentos:['ine','escritura','predial'],nota:''},
-  7:{titulo:'Uso de Suelo',documentos:['ine','escritura','predial'],nota:''},
+  6:{titulo:'Terminación de Obra',documentos:['solicitud_por_escrito','licencia_de_construccion','bitacora_de_obra'],nota:''},
+  7:{titulo:'Licencia de Construcción',documentos:['ine','escritura','predial'],nota:''},
   8:{titulo:'Anuncios Publicitarios',documentos:['ine','predial','contrato_arrendamiento','memoria_descriptiva'],nota:'Se requiere memoria descriptiva o calculo de superficie, si es Empresa se requiere Poder Notariado y Acta Constitutiva.'}
 };
-const labelsDoc={'ine':'INE o Pasaporte','escritura':'Escritura / Título','predial':'Boleta Predial Vigente','formato_constancia':'Formato de Constancia','contrato_arrendamiento':'Contrato de Arrendamiento o Escritura','memoria_descriptiva':'Memoria Descriptiva / Cálculo de Superficie','poder_notariado':'Poder Notariado (opcional para empresas)','acta_constitutiva':'Acta Constitutiva (opcional para empresas)'};
+const labelsDoc={'ine':'INE o Pasaporte','escritura':'Escritura / Título','predial':'Boleta Predial Vigente','formato_constancia':'Formato de Constancia','contrato_arrendamiento':'Contrato de Arrendamiento o Escritura','memoria_descriptiva':'Memoria Descriptiva / Cálculo de Superficie','poder_notariado':'Poder Notariado (opcional para empresas)','acta_constitutiva':'Acta Constitutiva (opcional para empresas)','solicitud_por_escrito':'Solicitud por Escrito','licencia_de_construccion':'Licencia de Construcción','bitacora_de_obra':'Bitácora de Obra'};
 function seleccionarTramite(id,nombre){
   document.getElementById('tipo_tramite_id_hidden').value=id;
   document.getElementById('tipo_tramite_id').value=id;
@@ -313,15 +313,74 @@ document.querySelectorAll('.btn-editar-correccion').forEach(btn=>{
     document.getElementById('sec_telefono').textContent=d.telefono||'—';
     document.getElementById('sec_correo').textContent=d.correo||'—';
     document.getElementById('sec_tipo_tramite_id').value=d.tipoTramiteId||'';
-    // Show optional fields for Anuncios Publicitarios
+    // Mostrar documentos requeridos según tipo de trámite
     const tipoId = d.tipoTramiteId || '';
-    if(tipoId == '8'){
-      document.getElementById('sec_grupo_poder_notariado')?.classList.remove('d-none');
-      document.getElementById('sec_grupo_acta_constitutiva')?.classList.remove('d-none');
-    } else {
-      document.getElementById('sec_grupo_poder_notariado')?.classList.add('d-none');
-      document.getElementById('sec_grupo_acta_constitutiva')?.classList.add('d-none');
+    // Ocultar todos los campos de subida primero
+    const allInputFields = ['sec_ine', 'sec_escritura', 'sec_predial', 'sec_formato_constancia', 'sec_contrato_arrendamiento', 'sec_memoria_descriptiva', 'sec_poder_notariado', 'sec_acta_constitutiva', 'sec_solicitud_por_escrito', 'sec_licencia_de_construccion', 'sec_bitacora_de_obra'];
+    allInputFields.forEach(field => {
+      const el = document.getElementById(field);
+      if (el) el.style.display = 'none';
+    });
+    // Mostrar campos requeridos según tipo
+    switch(tipoId) {
+      case '1':
+        ['sec_ine', 'sec_escritura', 'sec_predial'].forEach(field => {
+          const el = document.getElementById(field);
+          if (el) el.style.display = 'block';
+        });
+        break;
+      case '2':
+        ['sec_ine', 'sec_escritura', 'sec_predial', 'sec_formato_constancia'].forEach(field => {
+          const el = document.getElementById(field);
+          if (el) el.style.display = 'block';
+        });
+        break;
+      case '3':
+        ['sec_ine', 'sec_escritura', 'sec_predial'].forEach(field => {
+          const el = document.getElementById(field);
+          if (el) el.style.display = 'block';
+        });
+        break;
+      case '4':
+        ['sec_ine', 'sec_escritura', 'sec_predial'].forEach(field => {
+          const el = document.getElementById(field);
+          if (el) el.style.display = 'block';
+        });
+        break;
+      case '5':
+        ['sec_ine'].forEach(field => {
+          const el = document.getElementById(field);
+          if (el) el.style.display = 'block';
+        });
+        break;
+      case '6':
+        ['sec_solicitud_por_escrito', 'sec_licencia_de_construccion', 'sec_bitacora_de_obra'].forEach(field => {
+          const el = document.getElementById(field);
+          if (el) el.style.display = 'block';
+        });
+        break;
+      case '7':
+        ['sec_ine', 'sec_escritura', 'sec_predial'].forEach(field => {
+          const el = document.getElementById(field);
+          if (el) el.style.display = 'block';
+        });
+        break;
+      case '7':
+        ['sec_ine', 'sec_escritura', 'sec_predial'].forEach(field => {
+          const el = document.getElementById(field);
+          if (el) el.style.display = 'block';
+        });
+        break;
+      case '8':
+        ['sec_ine', 'sec_predial', 'sec_contrato_arrendamiento', 'sec_memoria_descriptiva', 'sec_poder_notariado', 'sec_acta_constitutiva'].forEach(field => {
+          const el = document.getElementById(field);
+          if (el) el.style.display = 'block';
+        });
+        break;
+      default:
+        break;
     }
+
     document.getElementById('sec_nota').value='';
     document.getElementById('sec_observaciones').textContent=d.observaciones||'Sin indicaciones del verificador.';
     
@@ -334,7 +393,10 @@ document.querySelectorAll('.btn-editar-correccion').forEach(btn=>{
       sec_doc_contrato_arrendamiento: d.contrato,
       sec_doc_memoria_descriptiva: d.memoria,
       sec_doc_poder_notariado: d.poder,
-      sec_doc_acta_constitutiva: d.acta
+      sec_doc_acta_constitutiva: d.acta,
+      sec_doc_solicitud_por_escrito: d.solicitud_por_escrito,
+      sec_doc_licencia_de_construccion: d.licencia_de_construccion,
+      sec_doc_bitacora_de_obra: d.bitacora_de_obra
     };
     
     let hayDocs = false;
@@ -527,7 +589,8 @@ if (folioSalidaNumero) {
   $('#cs_tipo_asignacion').text($(this).data('tipo-asignacion') || 'ASIGNACIÓN');
   $('#cs_numero_asignado').text($(this).data('numero-asignado') || '—');
   $('#cs_referencia_anterior').text($(this).data('referencia-anterior') || '—');
-  $('#cs_entre_calles').text($(this).data('entre-calles') || '—');
+  $('#cs_entre_calle1').text($(this).data('entre-calle1') || '—');
+  $('#cs_entre_calle2').text($(this).data('entre-calle2') || '—');
   $('#cs_cuenta_catastral').text($(this).data('cuenta-catastral') || '—');
   $('#cs_manzana').text($(this).data('manzana') || '—');
   $('#cs_lote').text($(this).data('lote') || '—');
@@ -536,10 +599,9 @@ if (folioSalidaNumero) {
   // CROQUIS
   let croquis = $(this).data('croquis');
   _cs_croquis_guardado = !!croquis; // Determinar si hay croquis
-  
+
   if(croquis && croquis.trim()) {
-    const imgUrl = 'uploads/' + croquis;
-    $('#cs_preview_img').attr('src', imgUrl).show();
+    $('#cs_preview_img').attr('src', croquis).show();
     $('#cs_no_img').hide();
   } else {
     $('#cs_preview_img').hide();
@@ -601,27 +663,7 @@ document.getElementById('modalConstanciaSec').addEventListener('hidden.bs.modal'
 
 
 
-$(document).on('click', '.btn-reimprimir', function() {
 
-    let folio = $(this).data('folio');
-
-    let folioSalidaNumero = $(this).data('folio-salida-numero');
-    let folioSalidaAnio   = $(this).data('folio-salida-anio');
-
-    // Mostrar folio de entrada
-    $('#cs_folio').text(folio);
-
-    // Construir folio de salida
-    let folioSalida = '—';
-
-    if (folioSalidaNumero && folioSalidaAnio) {
-        folioSalida = String(folioSalidaNumero).padStart(3, '0') + '/' + folioSalidaAnio;
-    }
-
-    // Mostrar folio de salida
-    $('#cs_folio_salida').text(folioSalida);
-
-});
 
 
 

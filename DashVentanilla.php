@@ -83,11 +83,9 @@ $aprobados_ver_res = $conn->query("
 // ── Trámites firmados por el Director (ya aprobados) ──
 $tramites_firmados_res = $conn->query("
     SELECT t.*, tt.nombre AS tipo_tramite_nombre,
-           u.nombre AS solicitante_nombre, u.apellidos AS solicitante_apellidos,
            CONCAT(LPAD(t.folio_numero,3,'0'),'/',t.folio_anio) AS folio_formateado
     FROM tramites t
     LEFT JOIN tipos_tramite tt ON t.tipo_tramite_id = tt.id
-    LEFT JOIN usuarios u ON t.usuario_creador_id = u.id
     WHERE t.estatus = 'Aprobado'
     ORDER BY t.fecha_aprobacion DESC
 ");
@@ -376,7 +374,7 @@ if (!empty($av['folio_salida_numero'])) {
         <td><?= htmlspecialchars($fechaApro) ?></td>
         <td class="text-center">
           <?php if((int)$av['tipo_tramite_id'] === 1): ?>
-          <button class="btn btn-sm btn-outline-success btn-constancia-sec mb-1"
+           <button class="btn btn-sm btn-outline-success btn-constancia-sec mb-1"
             data-folio="<?= htmlspecialchars($fav) ?>"
             data-propietario="<?= htmlspecialchars($propav) ?>"
             data-direccion="<?= htmlspecialchars($dirav) ?>"
@@ -384,14 +382,15 @@ if (!empty($av['folio_salida_numero'])) {
             data-numero-asignado="<?= htmlspecialchars($num_asig) ?>"
             data-tipo-asignacion="<?= htmlspecialchars($tipo_asig) ?>"
             data-referencia-anterior="<?= htmlspecialchars($ref_ant) ?>"
-            data-entre-calles="<?= htmlspecialchars($entre_c) ?>"
+            data-entre-calle1="<?= htmlspecialchars($entre_calle1) ?>"
+            data-entre-calle2="<?= htmlspecialchars($entre_calle2) ?>"
             data-folio-salida-numero="<?= $av['folio_salida_numero'] ?>"
 data-folio-salida-anio="<?= $av['folio_salida_anio'] ?>"
             data-manzana="<?= htmlspecialchars($mzav) ?>"
             data-lote="<?= htmlspecialchars($loteav) ?>"
             data-fecha-constancia="<?= htmlspecialchars($fec_const) ?>"
             data-cuenta-catastral="<?= htmlspecialchars($cta_cat) ?>"
-            data-croquis="<?= htmlspecialchars(isset($av['croquis_archivo']) && !empty($av['croquis_archivo']) ? (strpos($av['croquis_archivo'], '.') === 0 ? $av['croquis_archivo'] : 'uploads/' . $av['croquis_archivo']) : '') ?>"
+            data-croquis="<?= htmlspecialchars(isset($av['croquis_archivo']) && !empty($av['croquis_archivo']) ? 'uploads/' . $av['croquis_archivo'] : '') ?>"
             data-bs-toggle="modal" data-bs-target="#modalConstanciaSec"
             title="Editar e imprimir constancia para firma">
             <i class="bi bi-file-earmark-check me-1"></i>Constancia
@@ -534,7 +533,7 @@ data-folio-salida-anio="<?= $av['folio_salida_anio'] ?>"
             <div class="row g-2">
 
               <div class="col-md-4">
-                <strong>Tipo:</strong><br>
+                <strong>Tipo:</strong><br>                                
                 <span id="cs_tipo_asignacion"></span>
               </div>
 
@@ -586,7 +585,7 @@ data-folio-salida-anio="<?= $av['folio_salida_anio'] ?>"
 
             <img id="cs_preview_img"
                  src=""
-                 style="max-width:100%; max-height:300px; object-fit:contain; border-radius:8px;">
+                 style="max-width:100%; max-height:300px; object-fit:contain; border-radius:8px; display:none;">
 
             <div id="cs_no_img" class="text-muted mt-2">
               <i class="bi bi-image fs-2 d-block"></i>
@@ -638,9 +637,9 @@ data-folio-salida-anio="<?= $av['folio_salida_anio'] ?>"
         'FUSION'       => ['icon'=>'bi-union',                'color'=>'#fd7e14'], // 3
         'SUBDIVISION'  => ['icon'=>'bi-subtract',             'color'=>'#6610f2'], // 4
         'INFORME_CU'   => ['icon'=>'bi-file-earmark-bar-graph','color'=>'#0dcaf0'], // 5
-        'USO_SUELO'    => ['icon'=>'bi-diagram-3',            'color'=>'#6f42c1'], // 6
+        'TER_OBRA'    => ['icon'=>'bi-check-circle-fill',    'color'=>'#6f42c1'], // 6
         'LIC_CONST' => ['icon'=>'bi-building',             'color'=>'#dc3545'], // 7
-        'ANUNCIOS'      => ['icon'=>'bi-megaphone',            'color'=>'#dc3545'], // 8
+        'ANUNCIOS'      => ['icon'=>'bi-megaphone',            'color'=>'#ffc107'], // 8
 
       ];
       $requisitosInfo = [
@@ -891,12 +890,27 @@ data-folio-salida-anio="<?= $av['folio_salida_anio'] ?>"
              <input type="file" class="form-control" name="poder_notariado" accept=".pdf,.jpg,.jpeg,.png">
              <small class="text-muted">PDF, JPG, PNG (Max. 5MB)</small>
            </div>
-           <div class="col-md-4 mb-4" id="grupo-acta_constitutiva" style="display:none;">
-             <label class="form-label fw-bold"><i class="bi bi-building me-1"></i>Acta Constitutiva <small class="text-muted">(opcional para empresas)</small></label>
-             <input type="file" class="form-control" name="acta_constitutiva" accept=".pdf,.jpg,.jpeg,.png">
-             <small class="text-muted">PDF, JPG, PNG (Max. 5MB)</small>
-           </div>
-         </div>
+            <div class="col-md-4 mb-4" id="grupo-acta_constitutiva" style="display:none;">
+              <label class="form-label fw-bold"><i class="bi bi-building me-1"></i>Acta Constitutiva <small class="text-muted">(opcional para empresas)</small></label>
+              <input type="file" class="form-control" name="acta_constitutiva" accept=".pdf,.jpg,.jpeg,.png">
+              <small class="text-muted">PDF, JPG, PNG (Max. 5MB)</small>
+            </div>
+            <div class="col-md-4 mb-4" id="grupo-solicitud_por_escrito" style="display:none;">
+              <label class="form-label fw-bold"><i class="bi bi-file-earmark-text me-1"></i>Solicitud por Escrito</label>
+              <input type="file" class="form-control" name="solicitud_por_escrito" accept=".pdf,.jpg,.jpeg,.png">
+              <small class="text-muted">PDF, JPG, PNG (Max. 5MB)</small>
+            </div>
+            <div class="col-md-4 mb-4" id="grupo-licencia_de_construccion" style="display:none;">
+              <label class="form-label fw-bold"><i class="bi bi-building me-1"></i>Licencia de Construcción</label>
+              <input type="file" class="form-control" name="licencia_de_construccion" accept=".pdf,.jpg,.jpeg,.png">
+              <small class="text-muted">PDF, JPG, PNG (Max. 5MB)</small>
+            </div>
+            <div class="col-md-4 mb-4" id="grupo-bitacora_de_obra" style="display:none;">
+              <label class="form-label fw-bold"><i class="bi bi-journal-text me-1"></i>Bitácora de Obra</label>
+              <input type="file" class="form-control" name="bitacora_de_obra" accept=".pdf,.jpg,.jpeg,.png">
+              <small class="text-muted">PDF, JPG, PNG (Max. 5MB)</small>
+            </div>
+          </div>
         <div class="mt-2 p-3 border rounded" style="background:#fffbf0;">
           <label class="form-label fw-bold text-warning-emphasis"><i class="bi bi-chat-left-text me-1"></i>Comentarios / Justificación de documentos faltantes</label>
           <textarea name="comentario_sin_doc" class="form-control" rows="3" placeholder="Ej: El solicitante no presenta INE porque tramita con carta poder..."></textarea>
@@ -915,9 +929,21 @@ data-folio-salida-anio="<?= $av['folio_salida_anio'] ?>"
 <section id="mapaa" class="tramite-box mb-4">
   <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
     <h4 class="m-0" style="color:#7b0f2b;"><i class="bi bi-map me-2"></i>Mapa Georreferenciado</h4>
-    <button type="button" class="btn btn-sm btn-outline-primary" onclick="centrarMapa()">
-      <i class="bi bi-geo-alt me-1"></i>Centrar municipio
-    </button>
+    <div class="d-flex gap-2 flex-wrap">
+      <select id="filtro-estatus" class="form-select form-select-sm" style="width:auto;">
+        <option value="todos">Todos los estatus</option>
+        <option value="En revisión">En revisión</option>
+        <option value="Aprobado por Verificador">Aprobado por Verificador</option>
+        <option value="Aprobado">Aprobado</option>
+        <option value="Rechazado">Rechazado</option>
+      </select>
+      <button type="button" class="btn btn-sm btn-outline-primary" onclick="centrarMapa()" aria-label="Centrar mapa en el municipio">
+        <i class="bi bi-geo-alt me-1"></i>Centrar municipio
+      </button>
+      <button type="button" class="btn btn-sm btn-outline-info" onclick="obtenerUbicacion()" aria-label="Centrar mapa en mi ubicación">
+        <i class="bi bi-geo me-1"></i>Mi ubicación
+      </button>
+    </div>
   </div>
   <div class="alert alert-info py-2" style="font-size:.85rem;">
     <i class="bi bi-cursor me-2"></i>Haz clic en el mapa para capturar las coordenadas UTM del predio automáticamente.
@@ -925,7 +951,7 @@ data-folio-salida-anio="<?= $av['folio_salida_anio'] ?>"
   <div id="coords-display" class="mb-2 px-2 py-1 rounded border bg-light d-none" style="font-size:.82rem;font-family:monospace;">
     <i class="bi bi-pin-map me-1 text-danger"></i><span id="coords-texto">Sin ubicación seleccionada</span>
   </div>
-  <div id="mapa"></div>
+  <div id="mapa" aria-label="Mapa interactivo de trámites y parcelas" role="application"></div>
 </section>
 
 <!-- ================================================ -->
@@ -1173,10 +1199,23 @@ data-folio-salida-anio="<?= $av['folio_salida_anio'] ?>"
                     <td><?php echo htmlspecialchars($tr['numero_asignado'] ?? '—'); ?></td>
                     <td><?php echo $tr['fecha_aprobacion'] ? date('d/m/Y', strtotime($tr['fecha_aprobacion'])) : '—'; ?></td>
                     <td class="text-center">
-                        <button class="btn btn-sm btn-success btn-reimprimir"
+                        <button class="btn btn-sm btn-success btn-constancia-sec"
                             data-folio="<?php echo $folio_ing; ?>"
                             data-folio-salida-numero="<?php echo $tr['folio_salida_numero'] ?? ''; ?>"
                             data-folio-salida-anio="<?php echo $tr['folio_salida_anio'] ?? ''; ?>"
+                            data-propietario="<?php echo htmlspecialchars($tr['propietario']); ?>"
+                            data-direccion="<?php echo htmlspecialchars($tr['direccion'] ?? ''); ?>"
+                            data-localidad="<?php echo htmlspecialchars($tr['localidad'] ?? ''); ?>"
+                            data-tipo-asignacion="<?php echo htmlspecialchars($tr['tipo_asignacion'] ?? 'ASIGNACION'); ?>"
+                            data-numero-asignado="<?php echo htmlspecialchars($tr['numero_asignado'] ?? ''); ?>"
+                            data-referencia-anterior="<?php echo htmlspecialchars($tr['referencia_anterior'] ?? ''); ?>"
+                            data-entre-calle1="<?php echo htmlspecialchars($tr['entre_calle1'] ?? ''); ?>"
+                            data-entre-calle2="<?php echo htmlspecialchars($tr['entre_calle2'] ?? ''); ?>"
+                            data-manzana="<?php echo htmlspecialchars($tr['manzana'] ?? ''); ?>"
+                            data-lote="<?php echo htmlspecialchars($tr['lote'] ?? ''); ?>"
+                            data-fecha-constancia="<?php echo htmlspecialchars($tr['fecha_constancia'] ?? date('Y-m-d')); ?>"
+                            data-cuenta-catastral="<?php echo htmlspecialchars($tr['cuenta_catastral'] ?? ''); ?>"
+                            data-croquis="<?php echo htmlspecialchars(isset($tr['croquis_archivo']) && !empty($tr['croquis_archivo']) ? 'uploads/' . $tr['croquis_archivo'] : ''); ?>"
                             data-bs-toggle="modal" data-bs-target="#modalConstanciaSec"
                             title="Reimprimir constancia">
                             <i class="bi bi-printer me-1"></i>Imprimir
@@ -1511,9 +1550,21 @@ data-folio-salida-anio="<?= $av['folio_salida_anio'] ?>"
                  <span><i class="bi bi-building me-2 text-primary"></i>Acta Constitutiva <small class="text-muted">(opcional para empresas)</small></span>
                  <span class="badge bg-primary">Ver</span>
                </a>
-             </div>
-            <p id="sec_sin_docs" class="text-muted small fst-italic" style="display:none;">Sin documentos cargados.</p>
-          </div>
+                <a id="sec_doc_solicitud_por_escrito" href="#" target="_blank" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" style="display:none!important;">
+                  <span><i class="bi bi-file-earmark-text me-2 text-primary"></i>Solicitud por Escrito</span>
+                  <span class="badge bg-primary">Ver</span>
+                </a>
+                <a id="sec_doc_licencia_de_construccion" href="#" target="_blank" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" style="display:none!important;">
+                  <span><i class="bi bi-building me-2 text-primary"></i>Licencia de Construcción</span>
+                  <span class="badge bg-primary">Ver</span>
+                </a>
+                <a id="sec_doc_bitacora_de_obra" href="#" target="_blank" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" style="display:none!important;">
+                  <span><i class="bi bi-journal-text me-2 text-primary"></i>Bitácora de Obra</span>
+                  <span class="badge bg-primary">Ver</span>
+                </a>
+              </div>
+             <p id="sec_sin_docs" class="text-muted small fst-italic" style="display:none;">Sin documentos cargados.</p>
+           </div>
 
           <div class="card border-primary mb-3">
             <div class="card-header bg-primary text-white fw-bold">
@@ -1521,41 +1572,53 @@ data-folio-salida-anio="<?= $av['folio_salida_anio'] ?>"
             </div>
             <div class="card-body">
               <div class="row g-3">
-                <div class="col-md-6">
+                <div class="col-md-6" id="sec_ine" style="display:none;">
                   <label class="form-label fw-semibold small">INE / Identificación</label>
                   <input type="file" name="ine" class="form-control form-control-sm" accept="image/*,.pdf">
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-6" id="sec_escritura" style="display:none;">
                   <label class="form-label fw-semibold small">Escritura / Título</label>
                   <input type="file" name="escritura" class="form-control form-control-sm" accept="image/*,.pdf">
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-6" id="sec_predial" style="display:none;">
                   <label class="form-label fw-semibold small">Boleta Predial</label>
                   <input type="file" name="predial" class="form-control form-control-sm" accept="image/*,.pdf">
                 </div>
-                 <div class="col-md-6">
+                 <div class="col-md-6" id="sec_formato_constancia" style="display:none;">
                    <label class="form-label fw-semibold small">Formato de Constancia</label>
                    <input type="file" name="formato_constancia" class="form-control form-control-sm" accept="image/*,.pdf">
                  </div>
-                 <div class="col-md-6">
+                 <div class="col-md-6" id="sec_contrato_arrendamiento" style="display:none;">
                    <label class="form-label fw-semibold small">Contrato de Arrendamiento o Escritura</label>
                    <input type="file" name="contrato_arrendamiento" class="form-control form-control-sm" accept="image/*,.pdf">
                  </div>
-                 <div class="col-md-6">
+                 <div class="col-md-6" id="sec_memoria_descriptiva" style="display:none;">
                    <label class="form-label fw-semibold small">Memoria Descriptiva / Cálculo de Superficie</label>
                    <input type="file" name="memoria_descriptiva" class="form-control form-control-sm" accept="image/*,.pdf">
                  </div>
-                 <div class="col-md-6" id="sec_grupo_poder_notariado" style="display:none;">
+                 <div class="col-md-6" id="sec_poder_notariado" style="display:none;">
                    <label class="form-label fw-semibold small">Poder Notariado <small class="text-muted">(opcional para empresas)</small></label>
                    <input type="file" name="poder_notariado" class="form-control form-control-sm" accept="image/*,.pdf">
                  </div>
-                 <div class="col-md-6" id="sec_grupo_acta_constitutiva" style="display:none;">
+                 <div class="col-md-6" id="sec_acta_constitutiva" style="display:none;">
                    <label class="form-label fw-semibold small">Acta Constitutiva <small class="text-muted">(opcional para empresas)</small></label>
                    <input type="file" name="acta_constitutiva" class="form-control form-control-sm" accept="image/*,.pdf">
                  </div>
+                 <div class="col-md-6" id="sec_solicitud_por_escrito" style="display:none;">
+                   <label class="form-label fw-semibold small">Solicitud por Escrito</label>
+                   <input type="file" name="solicitud_por_escrito" class="form-control form-control-sm" accept="image/*,.pdf">
+                 </div>
+                 <div class="col-md-6" id="sec_licencia_de_construccion" style="display:none;">
+                   <label class="form-label fw-semibold small">Licencia de Construcción</label>
+                   <input type="file" name="licencia_de_construccion" class="form-control form-control-sm" accept="image/*,.pdf">
+                 </div>
+                 <div class="col-md-6" id="sec_bitacora_de_obra" style="display:none;">
+                   <label class="form-label fw-semibold small">Bitácora de Obra</label>
+                   <input type="file" name="bitacora_de_obra" class="form-control form-control-sm" accept="image/*,.pdf">
+                 </div>
                </div>
-             </div>
-           </div>
+              </div>
+            </div>
 
           <div class="card border-secondary mb-3">
             <div class="card-header bg-secondary text-white fw-bold">
@@ -1663,8 +1726,11 @@ data-folio-salida-anio="<?= $av['folio_salida_anio'] ?>"
 
 <!-- SCRIPTS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.7.5/proj4.js"></script>
 <script src="js/dashVentanilla.js"></script>

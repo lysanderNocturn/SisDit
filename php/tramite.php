@@ -260,6 +260,36 @@ try {
 
     $conn->commit();
 
+    // ── Agregar al GeoJSON si tiene lat/lng ──
+    if ($lat !== null && $lng !== null) {
+        $geojsonPath = "../Geojson/TRAMITES.geojson";
+        if (file_exists($geojsonPath)) {
+            $geojson = json_decode(file_get_contents($geojsonPath), true);
+            if ($geojson && isset($geojson['features'])) {
+                $newFeature = [
+                    'type' => 'Feature',
+                    'properties' => [
+                        'FOLIO_INGR' => "$folio_numero/$folio_anio",
+                        'NOM_SOLI' => $solicitante,
+                        'TIP_TRAMIT' => 'Nuevo Trámite',
+                        'UBICACION' => $direccion,
+                        'FECH_INGRE' => $fecha_ingreso,
+                        'FECH_ENTRE' => $fecha_entrega,
+                        'ESTATUS' => 'Nuevo',
+                        'CONTACTO' => $telefono,
+                        'NUMERO' => null
+                    ],
+                    'geometry' => [
+                        'type' => 'Point',
+                        'coordinates' => [$lng, $lat]
+                    ]
+                ];
+                $geojson['features'][] = $newFeature;
+                file_put_contents($geojsonPath, json_encode($geojson, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+            }
+        }
+    }
+
     header("Location: ../ficha.php?folio=" . str_pad($folio_numero, 3, "0", STR_PAD_LEFT) . "/$folio_anio");
     exit;
 

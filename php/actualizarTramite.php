@@ -390,6 +390,24 @@ try {
 
     $conn->commit();
 
+    // ── Actualizar GeoJSON ──
+    $geojsonPath = "../Geojson/TRAMITES.geojson";
+    if (file_exists($geojsonPath)) {
+        $geojson = json_decode(file_get_contents($geojsonPath), true);
+        if ($geojson && isset($geojson['features'])) {
+            foreach ($geojson['features'] as &$feature) {
+                if (isset($feature['properties']['FOLIO_INGR']) && $feature['properties']['FOLIO_INGR'] === $folio) {
+                    $feature['properties']['ESTATUS'] = $estatus;
+                    if ($numero_asignado) {
+                        $feature['properties']['NUMERO'] = $numero_asignado;
+                    }
+                    break;
+                }
+            }
+            file_put_contents($geojsonPath, json_encode($geojson, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+        }
+    }
+
     // ── Generar links de notificación ─────────────────────
     $nombre       = $tramite['solicitante'] ?: $tramite['propietario'];
     $primerNombre = explode(' ', $nombre)[0];

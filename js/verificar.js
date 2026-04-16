@@ -470,6 +470,9 @@ document.getElementById('formActualizarTramite')?.addEventListener('submit', fun
           const detalleModal = bootstrap.Modal.getInstance(document.getElementById('detalleTramite'));
           if (detalleModal) { detalleModal.hide(); } else { _abrirModalNotif(); }
 
+          // Refrescar mapa si está disponible
+          if (typeof refrescarMapa === 'function') refrescarMapa();
+
         } else {
           Swal.fire({ icon: 'error', title: 'Error al guardar', text: data.message || 'No se pudieron guardar los cambios' });
         }

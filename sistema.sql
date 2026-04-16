@@ -27,12 +27,19 @@ DELIMITER $$
 --
 CREATE DEFINER=`root`@`localhost` PROCEDURE `asignar_folio_salida` (IN `p_tramite_id` INT, IN `p_anio` INT)   BEGIN
   DECLARE v_siguiente INT DEFAULT 1;
+  DECLARE v_tipo_tramite_id INT;
 
-  -- Calcular el siguiente número disponible para ese año
+  -- Obtener el tipo de trámite del tramite dado
+  SELECT tipo_tramite_id INTO v_tipo_tramite_id
+  FROM tramites
+  WHERE id = p_tramite_id;
+
+  -- Calcular el siguiente número disponible para ese año y tipo de trámite
   SELECT COALESCE(MAX(folio_salida_numero), 0) + 1
     INTO v_siguiente
     FROM tramites
    WHERE folio_salida_anio = p_anio
+     AND tipo_tramite_id = v_tipo_tramite_id
      AND folio_salida_numero IS NOT NULL;
 
   -- Asignar solo si aún no tiene folio de salida

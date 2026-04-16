@@ -781,3 +781,46 @@ a:hover{color:var(--vino-oscuro);}
         print-color-adjust: exact;
     }
 }
+
+/* =====================================================
+   MAPA Y LEYENDA
+===================================================== */
+
+.info.legend {
+    background: white;
+    padding: 10px;
+    border: 2px solid rgba(0,0,0,0.2);
+    border-radius: 5px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.2);
+}
+
+.info.legend h4 {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+/* Responsive mapa */
+#mapa {
+    touch-action: none; /* Mejor manejo táctil */
+}
+
+@media (max-width: 768px) {
+    #mapa {
+        height: 300px !important;
+    }
+    .info.legend {
+        font-size: 12px;
+        padding: 8px;
+    }
+    .leaflet-control-container .leaflet-control {
+        margin: 5px;
+    }
+    .leaflet-control-layers {
+        font-size: 14px;
+    }
+    .btn {
+        font-size: 12px;
+        padding: 0.25rem 0.5rem;
+    }
+}
