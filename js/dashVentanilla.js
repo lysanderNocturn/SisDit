@@ -875,8 +875,11 @@ function cargarDatosTramiteVentanilla(tramite, folioOrigen) {
     document.querySelector('input[name="propietario"]').value = tramite.propietario || '';
     document.querySelector('input[name="direccion"]').value = tramite.direccion || '';
     document.querySelector('input[name="localidad"]').value = tramite.localidad || '';
-    document.querySelector('input[name="colonia"]').value = tramite.colonia || '';
+    document.querySelector('select[name="colonia"]').value = tramite.colonia || '';
     document.querySelector('input[name="cp"]').value = tramite.cp || '';
+    document.querySelector('select[name="calle"]').value = tramite.calle || '';
+    document.querySelector('select[name="entre_calle1"]').value = tramite.entre_calle1 || '';
+    document.querySelector('select[name="entre_calle2"]').value = tramite.entre_calle2 || '';
     document.querySelector('input[name="cuenta_catastral"]').value = tramite.cuenta_catastral || '';
     document.querySelector('input[name="superficie"]').value = tramite.superficie || '';
     document.querySelector('input[name="lat"]').value = tramite.lat || '';
@@ -1146,9 +1149,9 @@ document.getElementById('btnConfirmarCargarFolio')?.addEventListener('click', fu
         Swal.fire({ icon: 'warning', title: 'Folio requerido', text: 'Ingresa el folio de salida del trámite anterior.', confirmButtonColor: '#7b0f2b' });
         return;
     }
-    
+
     Swal.fire({ title: 'Buscando...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
-    
+
     // Buscar por folio de salida (añadir parámetro buscar_por_folio_salida=true)
     fetch(`php/obtener_tramite_anterior.php?folio=${encodeURIComponent(folioSalida)}&incluir_constancia=true&buscar_por_folio_salida=true`)
         .then(response => response.json())
@@ -1191,4 +1194,103 @@ document.getElementById('btnConfirmarCargarFolio')?.addEventListener('click', fu
             Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo conectar.', confirmButtonColor: '#7b0f2b' });
         });
 });
+
+// ── FILTRAR COLONIAS POR CÓDIGO POSTAL ──
+document.getElementById('cp')?.addEventListener('input', function() {
+    const cp = this.value.trim();
+    const coloniaSelect = document.getElementById('colonia_select');
+
+    if (cp.length === 5) {
+        fetch(`get_colonias.php?cp=${encodeURIComponent(cp)}`)
+            .then(response => response.json())
+            .then(colonias => {
+                coloniaSelect.innerHTML = '<option value="">Seleccionar colonia...</option>';
+                colonias.forEach(colonia => {
+                    const option = document.createElement('option');
+                    option.value = colonia;
+                    option.textContent = colonia;
+                    coloniaSelect.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Error cargando colonias:', error);
+                coloniaSelect.innerHTML = '<option value="">Seleccionar colonia...</option>';
+            });
+    } else {
+        coloniaSelect.innerHTML = '<option value="">Seleccionar colonia...</option>';
+    }
+});
+
+// ── CARGAR CALLES ──
+function cargarCalles() {
+    fetch('get_calles.php')
+        .then(response => response.json())
+        .then(calles => {
+            const calleSelect = document.getElementById('calle_select');
+            const entreCalle1Select = document.getElementById('entre_calle1_select');
+            const entreCalle2Select = document.getElementById('entre_calle2_select');
+
+            const optionHtml = '<option value="">Seleccionar calle...</option>';
+            if (calleSelect) calleSelect.innerHTML = optionHtml;
+            if (entreCalle1Select) entreCalle1Select.innerHTML = optionHtml;
+            if (entreCalle2Select) entreCalle2Select.innerHTML = optionHtml;
+
+            calles.forEach(calle => {
+                if (calleSelect) {
+                    const option = document.createElement('option');
+                    option.value = calle;
+                    option.textContent = calle;
+                    calleSelect.appendChild(option);
+                }
+                if (entreCalle1Select) {
+                    const option = document.createElement('option');
+                    option.value = calle;
+                    option.textContent = calle;
+                    entreCalle1Select.appendChild(option);
+                }
+                if (entreCalle2Select) {
+                    const option = document.createElement('option');
+                    option.value = calle;
+                    option.textContent = calle;
+                    entreCalle2Select.appendChild(option);
+                }
+            });
+        })
+        .catch(error => console.error('Error cargando calles:', error));
+}
+
+// ── BUSCAR CUENTA CATASTRAL ──
+document.getElementById('btnBuscarCuenta').addEventListener('click', function() {
+    const cuenta = document.getElementById('cuenta_catastral').value.trim();
+    if (!cuenta) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Cuenta requerida',
+            text: 'Ingresa una cuenta catastral para buscar.',
+            confirmButtonColor: '#7b0f2b'
+        });
+        return;
+    }
+
+    const encontrado = buscarYResaltarPoligono(cuenta);
+    if (!encontrado) {
+        Swal.fire({
+            icon: 'info',
+            title: 'No encontrada',
+            text: 'No se encontró ninguna parcela con esa cuenta catastral.',
+            confirmButtonColor: '#7b0f2b'
+        });
+    }
+});
+
+// También permitir buscar con Enter
+document.getElementById('cuenta_catastral').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        document.getElementById('btnBuscarCuenta').click();
+    }
+});
+
+// Cargar calles al cargar la página
+document.addEventListener('DOMContentLoaded', cargarCalles);
 

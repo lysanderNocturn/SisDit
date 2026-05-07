@@ -58,7 +58,10 @@ $observaciones       = trim(isset($_POST['observaciones']) ? $_POST['observacion
 $verificador_nombre  = mb_strtoupper(trim(isset($_POST['verificador_nombre']) ? $_POST['verificador_nombre'] : ''), 'UTF-8');
 $solo_constancia     = isset($_POST['solo_constancia']) && $_POST['solo_constancia'] == '1';
 
-// Campos de Constancia de Numero Oficial
+$direccion_constancia = mb_strtoupper(trim(isset($_POST['direccion_constancia']) ? $_POST['direccion_constancia'] : ''), 'UTF-8');
+// El formulario usa nombre colonia_constancia; aceptar ambos nombres por compatibilidad
+$colonia_input = isset($_POST['colonia_constancia']) ? $_POST['colonia_constancia'] : (isset($_POST['colonia']) ? $_POST['colonia'] : '');
+$colonia = mb_strtoupper(trim($colonia_input), 'UTF-8');
 $numero_asignado     = trim(isset($_POST['numero_asignado']) ? $_POST['numero_asignado'] : '');
 $tipo_asignacion     = trim(isset($_POST['tipo_asignacion']) ? $_POST['tipo_asignacion'] : 'Asignacion');
 $referencia_anterior = trim(isset($_POST['referencia_anterior']) ? $_POST['referencia_anterior'] : '');
@@ -137,6 +140,8 @@ try {
         $uid = (int) $_SESSION['id'];
 
         $sql = "UPDATE tramites SET
+                direccion = ?,
+                colonia              = ?,
                 numero_asignado     = ?,
                 tipo_asignacion     = ?,
                 referencia_anterior = ?,
@@ -152,7 +157,9 @@ try {
         $stmtUp = $conn->prepare($sql);
         if (!$stmtUp) throw new Exception("Error prepare UPDATE: " . $conn->error);
 
-        $stmtUp->bind_param("ssssssssssii",
+        $stmtUp->bind_param("ssssssssssssii",
+            $direccion_constancia,
+            $colonia,
             $numero_asignado,
             $tipo_asignacion,
             $referencia_anterior,

@@ -10368,6 +10368,195 @@
                     776162.13
                 ]
             }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "FOLIO_INGR": "356\/2026",
+                "NOM_SOLI": "CELIA SOTO OJEDA",
+                "TIP_TRAMIT": "Nuevo Trámite",
+                "UBICACION": "POMEX  NO 305",
+                "FECH_INGRE": "2026-04-21",
+                "FECH_ENTRE": "2026-05-05",
+                "ESTATUS": "Nuevo",
+                "CONTACTO": "4651250796",
+                "NUMERO": null
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    2460721.6,
+                    775619.58
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "FOLIO_INGR": "356\/2026",
+                "NOM_SOLI": "CELIA SOTO OJEDA",
+                "TIP_TRAMIT": "Nuevo Trámite",
+                "UBICACION": "POMEX",
+                "FECH_INGRE": "2026-04-21",
+                "FECH_ENTRE": "2026-05-05",
+                "ESTATUS": "Nuevo",
+                "CONTACTO": "4651250796",
+                "NUMERO": null
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    2461160.24,
+                    775359.08
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "FOLIO_INGR": "363\/2026",
+                "NOM_SOLI": "FRANCISCO DIAZ",
+                "TIP_TRAMIT": "Nuevo Trámite",
+                "UBICACION": "HIDALGO 20",
+                "FECH_INGRE": "2026-04-23",
+                "FECH_ENTRE": "2026-05-07",
+                "ESTATUS": "Nuevo",
+                "CONTACTO": "1231254545",
+                "NUMERO": null
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    2460558.26,
+                    775970.14
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "FOLIO_INGR": "369\/2026",
+                "NOM_SOLI": "AUTOZONE DE MEXICO SOCIEDAD DE RESPONSABILIDAD LIMITADA DE CV",
+                "TIP_TRAMIT": "Nuevo Trámite",
+                "UBICACION": "DR FRANCISCO GUEL JIMENEZ S\/N",
+                "FECH_INGRE": "2026-04-28",
+                "FECH_ENTRE": "2026-05-12",
+                "ESTATUS": "Nuevo",
+                "CONTACTO": "4492905055",
+                "NUMERO": null
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    2460412.46,
+                    776247.15
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "FOLIO_INGR": "370\/2026",
+                "NOM_SOLI": "J JESUS GARCIA GARCIA",
+                "TIP_TRAMIT": "Nuevo Trámite",
+                "UBICACION": "MANUEL DE VELAZCO MARTINES          #311,                   SOLIDARIDAD",
+                "FECH_INGRE": "2026-04-29",
+                "FECH_ENTRE": "2026-05-13",
+                "ESTATUS": "Nuevo",
+                "CONTACTO": "4651091099",
+                "NUMERO": null
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    2460076.13,
+                    775713.52
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "FOLIO_INGR": "371\/2026",
+                "NOM_SOLI": "MA GUADALUPE VAZQUEZ RODRIGUEZ",
+                "TIP_TRAMIT": "Nuevo Trámite",
+                "UBICACION": "CALLE AGUASCALIENTES #136 M-14 L-35 FRACCIONAMIENTO MIGUEL HIDALGO",
+                "FECH_INGRE": "2026-04-30",
+                "FECH_ENTRE": "2026-05-14",
+                "ESTATUS": "Nuevo",
+                "CONTACTO": "4651172809",
+                "NUMERO": null
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    2460477.08,
+                    775577.48
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "FOLIO_INGR": "375\/2026",
+                "NOM_SOLI": "FRANCISCO ALVARADO GUERRERO",
+                "TIP_TRAMIT": "Nuevo Trámite",
+                "UBICACION": "AV. REVOLUCION",
+                "FECH_INGRE": "2026-04-30",
+                "FECH_ENTRE": "2026-05-14",
+                "ESTATUS": "Nuevo",
+                "CONTACTO": "4651243302",
+                "NUMERO": null
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    2459701.33,
+                    776575.45
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "FOLIO_INGR": "379\/2026",
+                "NOM_SOLI": "MA DE LOURDES ORTIZ DURON",
+                "TIP_TRAMIT": "Nuevo Trámite",
+                "UBICACION": "MARIANO JIMENEZ ESQUINA OLIVARES SANTANA S\/N PABELLON DE HIDALGO",
+                "FECH_INGRE": "2026-05-05",
+                "FECH_ENTRE": "2026-05-19",
+                "ESTATUS": "Nuevo",
+                "CONTACTO": "4651091937",
+                "NUMERO": null
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    2454499.26,
+                    774338.16
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "FOLIO_INGR": "380\/2026",
+                "NOM_SOLI": "MARGARITA LUEVANO LAZARIN",
+                "TIP_TRAMIT": "Nuevo Trámite",
+                "UBICACION": "PINO #119 Y RPIVADA JACARANDAS COLONIA SANTA CRUZ RINCON DE ROMOS",
+                "FECH_INGRE": "2026-05-05",
+                "FECH_ENTRE": "2026-05-19",
+                "ESTATUS": "Nuevo",
+                "CONTACTO": "4651047521",
+                "NUMERO": null
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    2461144.06,
+                    775258.27
+                ]
+            }
         }
     ]
 }

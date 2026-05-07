@@ -1,0 +1,7 @@
+actividades de mejora
+
+->  Este la opcion de escanear directamente al precionar un boton segun el trmite que seleccionen
+->  al guardar el documento se guarde en una capeta estructurado como (../.private/folio/documentos/tipodocumento/archivo.pdf)
+->  en ventana de dashVer se puedan ver los documentos con la nueva estructura de guardado de documentos
+->  Si un ciudadano ya realizo un tramite se puedan extraer sus documentos desde la ruta
+->  

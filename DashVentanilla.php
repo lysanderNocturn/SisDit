@@ -360,6 +360,7 @@ if (!empty($av['folio_salida_numero'])) {
         $fec_const = isset($av['fecha_constancia'])    ? $av['fecha_constancia']    : date('Y-m-d');
         $cta_cat   = isset($av['cuenta_catastral'])    ? $av['cuenta_catastral']    : '';
         $dirav     = isset($av['direccion'])           ? $av['direccion']           : '';
+        $num       = isset($av['numero'])              ? $av['numero']              : '';
         $locav     = isset($av['localidad'])           ? $av['localidad']           : '';
       ?>
       <tr>
@@ -378,6 +379,7 @@ if (!empty($av['folio_salida_numero'])) {
             data-folio="<?= htmlspecialchars($fav) ?>"
             data-propietario="<?= htmlspecialchars($propav) ?>"
             data-direccion="<?= htmlspecialchars($dirav) ?>"
+            data-numero="<?= htmlspecialchars($num) ?>"
             data-localidad="<?= htmlspecialchars($locav) ?>"
             data-numero-asignado="<?= htmlspecialchars($num_asig) ?>"
             data-tipo-asignacion="<?= htmlspecialchars($tipo_asig) ?>"
@@ -390,7 +392,7 @@ data-folio-salida-anio="<?= $av['folio_salida_anio'] ?>"
             data-lote="<?= htmlspecialchars($loteav) ?>"
             data-fecha-constancia="<?= htmlspecialchars($fec_const) ?>"
             data-cuenta-catastral="<?= htmlspecialchars($cta_cat) ?>"
-            data-croquis="<?= htmlspecialchars(isset($av['croquis_archivo']) && !empty($av['croquis_archivo']) ? 'uploads/' . $av['croquis_archivo'] : '') ?>"
+            data-croquis="<?= htmlspecialchars($av['croquis_archivo'] ?? '') ?>"
             data-bs-toggle="modal" data-bs-target="#modalConstanciaSec"
             title="Editar e imprimir constancia para firma">
             <i class="bi bi-file-earmark-check me-1"></i>Constancia
@@ -519,6 +521,7 @@ data-folio-salida-anio="<?= $av['folio_salida_anio'] ?>"
             </div>
             <div class="col-md-6">
               <p><strong>Dirección:</strong> <span id="cs_direccion"></span></p>
+                <p><strong>Número:</strong> <span id="cs_numero"></span></p>
               <p><strong>Localidad:</strong> <span id="cs_localidad"></span></p>
             </div>
           </div>
@@ -762,7 +765,9 @@ data-folio-salida-anio="<?= $av['folio_salida_anio'] ?>"
       <input type="hidden" id="tipo_tramite_actual" value="">
       <div class="mb-3">
         <label class="form-label">Dirección <span class="text-danger">*</span></label>
-        <input type="text" class="form-control mayusculas" name="direccion" required placeholder="CALLE, NÚMERO, COLONIA">
+        <input type="text" class="form-control mayusculas" name="direccion" required placeholder="CALLE EJEMPLO: AV. INDEPENDENCIA">
+        <label class="form-label mt-2">Número</label>
+        <input type="text" class="form-control" name="numero" placeholder="Ej: 123 o S/N" required oninput="this.value=this.value.toUpperCase()">
       </div>
       <div class="row">
         <div class="col-md-4 mb-3">
@@ -825,7 +830,7 @@ data-folio-salida-anio="<?= $av['folio_salida_anio'] ?>"
         </div>
         <div class="col-md-6">
           <label class="form-label">Fecha de Entrega <span class="badge bg-success ms-1" style="font-size:.7rem;">10 días hábiles</span></label>
-          <input type="date" class="form-control bg-light" name="fecha_entrega" id="fechaEntrega" readonly>
+          <input type="date" class="form-control bg-light" name="fecha_entrega" id="fechaEntrega" >
         </div>
       </div>
 
@@ -993,6 +998,7 @@ data-folio-salida-anio="<?= $av['folio_salida_anio'] ?>"
         $ttelefono   = isset($t['telefono'])            ? $t['telefono']            : '—';
         $tsolicitante= isset($t['solicitante'])         ? $t['solicitante']         : '';
         $tdireccion  = isset($t['direccion'])           ? $t['direccion']           : '';
+        $tnumero     = isset($t['numero'])              ? $t['numero']              : '';
         $tlocalidad  = isset($t['localidad'])           ? $t['localidad']           : '';
         $tcorreo     = isset($t['correo'])              ? $t['correo']              : '';
         $tobs        = isset($t['observaciones'])       ? $t['observaciones']       : '';
@@ -1020,6 +1026,7 @@ data-folio-salida-anio="<?= $av['folio_salida_anio'] ?>"
               data-propietario="<?= htmlspecialchars($t['propietario']) ?>"
               data-solicitante="<?= htmlspecialchars($tsolicitante) ?>"
               data-direccion="<?= htmlspecialchars($tdireccion) ?>"
+              data-numero="<?= htmlspecialchars($tnumero) ?>"
               data-localidad="<?= htmlspecialchars($tlocalidad) ?>"
               data-tramite="<?= htmlspecialchars($tnombre) ?>"
               data-fecha="<?= htmlspecialchars(date('d/m/Y',strtotime($t['fecha_ingreso']))) ?>"
@@ -1110,6 +1117,7 @@ data-folio-salida-anio="<?= $av['folio_salida_anio'] ?>"
         $ttelefono   = isset($t['telefono'])            ? $t['telefono']            : '';
         $tsolicitante= isset($t['solicitante'])         ? $t['solicitante']         : '';
         $tdireccion  = isset($t['direccion'])           ? $t['direccion']           : '';
+        $tnumero     = isset($t['numero'])              ? $t['numero']              : '';
         $tlocalidad  = isset($t['localidad'])           ? $t['localidad']           : '';
         $tcorreo     = isset($t['correo'])              ? $t['correo']              : '';
         $tobs        = isset($t['observaciones'])       ? $t['observaciones']       : '';
@@ -1215,7 +1223,7 @@ data-folio-salida-anio="<?= $av['folio_salida_anio'] ?>"
                             data-lote="<?php echo htmlspecialchars($tr['lote'] ?? ''); ?>"
                             data-fecha-constancia="<?php echo htmlspecialchars($tr['fecha_constancia'] ?? date('Y-m-d')); ?>"
                             data-cuenta-catastral="<?php echo htmlspecialchars($tr['cuenta_catastral'] ?? ''); ?>"
-                            data-croquis="<?php echo htmlspecialchars(isset($tr['croquis_archivo']) && !empty($tr['croquis_archivo']) ? 'uploads/' . $tr['croquis_archivo'] : ''); ?>"
+                            data-croquis="<?php echo htmlspecialchars($tr['croquis_archivo'] ?? ''); ?>"
                             data-bs-toggle="modal" data-bs-target="#modalConstanciaSec"
                             title="Reimprimir constancia">
                             <i class="bi bi-printer me-1"></i>Imprimir
@@ -1497,6 +1505,7 @@ data-folio-salida-anio="<?= $av['folio_salida_anio'] ?>"
               <p class="mb-1"><strong>Propietario:</strong> <span id="sec_propietario"></span></p>
               <p class="mb-1"><strong>Solicitante:</strong> <span id="sec_solicitante"></span></p>
               <p class="mb-1"><strong>Dirección:</strong> <span id="sec_direccion"></span></p>
+              <p class="mb-1"><strong>Numero: </strong> <span id="sec_numero"></span></p>
             </div>
             <div class="col-md-6">
               <p class="mb-1"><strong>Trámite:</strong> <span id="sec_tramite"></span></p>

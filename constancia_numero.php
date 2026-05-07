@@ -799,7 +799,7 @@ else                     $back = 'DashVer.php';
     <div class="croquis-info" style="margin-bottom:3px;padding-bottom:3px;">
         <span><strong>FOLIO:</strong> <?= htmlspecialchars($folio_salida_display) ?></span>
         <span><strong>PROPIETARIO:</strong> <?= htmlspecialchars($t['propietario']) ?></span>
-        <span><strong>CALLE:</strong> <?= htmlspecialchars($t['direccion']) ?></span>
+        <span><strong>CALLE:</strong> <?= htmlspecialchars($t['direccion']) ?> #<?= htmlspecialchars($t['numero_asignado']) ?></span>
     </div>
     <div class="croquis-titulo" style="margin:3px 0 2px;">CROQUIS DE UBICACIÓN DEL PREDIO</div>
     <div class="croquis-subtitulo" style="margin-bottom:5px;">El croquis es de carácter ilustrativo y no constituye deslinde ni apeo del inmueble.</div>

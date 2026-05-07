@@ -96,8 +96,8 @@ $conn->close();
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
     @page {
-        size: landscape;
-        margin: 10mm;
+        size: letter;
+        margin: 5mm;
     }
 
     * {
@@ -431,6 +431,16 @@ $conn->close();
         margin-top: 8px;
     }
 
+    .ficha-page {
+        page-break-inside: avoid;
+    }
+
+    .cut-line {
+        border: none;
+        border-top: 1px dashed #000;
+        margin: 10px 0;
+    }
+
     /* ========== PRINT ========== */
     @media print {
         body {
@@ -442,15 +452,89 @@ $conn->close();
         }
 
         .ficha-container {
-            border: 2px solid #333;
+            border: 1px solid #333;
             margin: 0;
             width: 100%;
             page-break-inside: avoid;
+            font-size: 50%;
+            margin-bottom: 1px;
+            padding: 2px;
+        }
+
+        .ficha-header {
+            padding: 6px 10px 4px;
+        }
+
+        .ficha-header .folio-box .folio-value {
+            font-size: 10px;
+            padding: 1px 8px;
+        }
+
+        .ficha-main {
+            padding: 5px 10px 7px;
+        }
+
+        .ficha-title {
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .data-row {
+            margin-bottom: 2px;
+        }
+
+        .data-label {
+            min-width: 120px;
+            font-size: 7px;
+        }
+
+        .data-value {
+            font-size: 9px;
+            padding: 1px 6px;
+            min-height: 18px;
+        }
+
+        .tipo-tramite-section {
+            margin: 5px 0;
+        }
+
+        .tipo-tramite-value {
+            font-size: 11px;
+            padding: 3px 8px;
+        }
+
+        .fechas-row {
+            margin: 3px 0;
+        }
+
+        .fecha-box {
+            font-size: 9px;
+            padding: 1px 5px;
+        }
+
+        .firma-row {
+            margin-top: 1px;
+            margin-bottom: 3px;
+        }
+
+        .firma-line {
+            width: 160px;
+        }
+
+        .nota {
+            font-size: 7px;
+            margin-top: 5px;
+        }
+
+        .cut-line {
+            margin: 5px 0;
+            page-break-after: avoid;
         }
     }
 </style>
 </head>
 <body>
+<?php ob_start(); ?>
 
 <!-- BARRA ACCIONES -->
 <div class="no-print">
@@ -476,6 +560,7 @@ $conn->close();
 </div>
 
 <!-- FICHA -->
+<div class="ficha-wrapper">
 <div class="ficha-container">
 
     <!-- HEADER -->
@@ -515,7 +600,7 @@ $conn->close();
             <!-- DIRECCION -->
             <div class="data-row">
                 <div class="data-label">Direccion:</div>
-                <div class="data-value"><?= htmlspecialchars($tramite['direccion']) ?></div>
+                <div class="data-value"><?= htmlspecialchars($tramite['direccion']) ?><?= isset($tramite['numero']) ? ' ' . htmlspecialchars($tramite['numero']) : '' ?><?=  isset($tramite['colonia']) ? ' ' . htmlspecialchars($tramite['colonia']) : '' ?></div>
             </div>
             <div class="sub-labels">
                 <span>Calle</span>
@@ -650,6 +735,14 @@ $conn->close();
     <!-- CIERRE BODY -->
     </div>
 
+</div>
+<?php
+$ficha_html = ob_get_clean();
+?>
+<div class="ficha-page">
+<?php echo $ficha_html; ?>
+<hr class="cut-line">
+<?php echo $ficha_html; ?>
 </div>
 
 </body>

@@ -40,6 +40,9 @@ try {
     $solicitante = limpiarMayusculas($_POST['solicitante']);
     $cp          = !empty($_POST['cp'])         ? trim($_POST['cp'])                    : null;
     $superficie  = !empty($_POST['superficie']) ? trim($_POST['superficie'])             : null;
+    $calle       = !empty($_POST['calle'])      ? limpiarMayusculas($_POST['calle'])     : null;
+    $entre_calle1= !empty($_POST['entre_calle1'])? limpiarMayusculas($_POST['entre_calle1']): null;
+    $entre_calle2= !empty($_POST['entre_calle2'])? limpiarMayusculas($_POST['entre_calle2']): '';
 
     $tipo_tramite_id = (int) $_POST['tipo_tramite_id'];
 
@@ -134,9 +137,9 @@ try {
     $usuario_id     = (int) $_SESSION['id'];                    // i 24
 
     /* ══════════════════════════════════════════════════════
-       INSERT — 24 columnas, 24 tipos, 24 variables
-       Tipos: i i i  s s s s s  d d  s s  s s s  s s  s s s s  s s  i
-       Pos:   1 2 3  4 5 6 7 8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24
+       INSERT — 27 columnas, 27 tipos, 27 variables
+       Tipos: i i i  s s s s s s s s  d d  s s  s s s  s s  s s s s  s s  i
+       Pos:   1 2 3  4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27
     ══════════════════════════════════════════════════════ */
     $sql = "
         INSERT INTO tramites (
@@ -148,6 +151,9 @@ try {
             localidad,
             colonia,
             cp,
+            calle,
+            entre_calle1,
+            entre_calle2,
             lat,
             lng,
             fecha_ingreso,
@@ -188,17 +194,21 @@ try {
             ?,
             ?,
             ?,
+            ?,
+            ?,
+            ?,
             ?
         )";
 
     $stmt = $conn->prepare($sql);
     if (!$stmt) throw new Exception("Error al preparar INSERT: " . $conn->error);
 
-    /*  24 tipos exactos:
-        i  i  i  s  s  s  s  s  d  d  s   s   s   s   s   s   s   s   s   s   s   s   s   i
-        1  2  3  4  5  6  7  8  9  10 11  12  13  14  15  16  17  18  19  20  21  22  23  24  */
+    /*  27 tipos exactos:
+        i  i  i  s  s  s  s  s  s  s  s  s  d  d  s   s   s   s   s   s   s   s   s   s   s   s   s   i
+        1  2  3  4  5  6  7  8  9  10 11 12 13 14  15  16  17  18  19  20  21  22  23  24  25  26  27  */
     $stmt->bind_param(
-        "iiisssssddsssssssssssssi",
+
+        "iiissssssssddsssssssssssssi",
         $folio_numero,      // 1  i
         $folio_anio,        // 2  i
         $tipo_tramite_id,   // 3  i
@@ -207,22 +217,25 @@ try {
         $localidad,         // 6  s
         $colonia,           // 7  s
         $cp,                // 8  s
-        $lat,               // 9  d
-        $lng,               // 10 d
-        $fecha_ingreso,     // 11 s
-        $fecha_entrega,     // 12 s
-        $solicitante,       // 13 s
-        $telefono,          // 14 s
-        $correo,            // 15 s
-        $cuenta_catastral,  // 16 s
-        $superficie,        // 17 s
-        $ine_archivo,       // 18 s
-        $esc_archivo,       // 19 s
-        $pre_archivo,       // 20 s
-        $fmt_constancia,    // 21 s
-        $datos_json,        // 22 s
-        $comentario_sin_doc,// 23 s
-        $usuario_id         // 24 i
+        $calle,             // 9  s
+        $entre_calle1,      // 10 s
+        $entre_calle2,      // 11 s
+        $lat,               // 12 d
+        $lng,               // 13 d
+        $fecha_ingreso,     // 14 s
+        $fecha_entrega,     // 15 s
+        $solicitante,       // 16 s
+        $telefono,          // 17 s
+        $correo,            // 18 s
+        $cuenta_catastral,  // 19 s
+        $superficie,        // 20 s
+        $ine_archivo,       // 21 s
+        $esc_archivo,       // 22 s
+        $pre_archivo,       // 23 s
+        $fmt_constancia,    // 24 s
+        $datos_json,        // 25 s
+        $comentario_sin_doc,// 26 s
+        $usuario_id         // 26 i
     );
 
     if (!$stmt->execute()) {

@@ -27,6 +27,16 @@ $sql = "SELECT t.*, tt.nombre as tipo_tramite_nombre
 $params = [];
 $types = "";
 
+// consulta base para obtener trámites, con posibilidad de agregar filtros dinámicos según los parámetros GET recibidos. Se construye la consulta SQL y se preparan los parámetros para evitar inyecciones SQL.
+
+$cfg = [];
+$resCfg = $conn->query("SELECT direccion, colonia FROM tramites");
+while ($rowCfg = $resCfg->fetch_assoc()) {
+    $cfg['direccion'][] = $rowCfg['direccion'];
+    $cfg['colonia'][] = $rowCfg['colonia'];
+}
+
+
 /* ===== FILTRO FOLIO ===== */
 if (!empty($_GET['folio']) && str_contains($_GET['folio'], '/')) {
     [$folio_numero, $folio_anio] = explode('/', $_GET['folio']);
@@ -234,6 +244,16 @@ window.onpopstate = function () {
     .dataTables_wrapper .dataTables_filter input {
         width: calc(100% - 60px) !important;
     }
+}
+
+/* Estilos para mejorar alineación del modal de constancia */
+.modal .form-label { font-size: .9rem; }
+.modal .form-control { height: calc(1.9em + .75rem + 2px); }
+.modal .card-body .row > [class*="col-"] { display:flex; flex-direction:column; }
+
+/* Ajuste específico: asegurar que los tres inputs principales estén alineados */
+@media (min-width: 768px) {
+  #modalConstancia .card-body .row.g-3 > .col-md-4 { display:flex; flex-direction:column; }
 }
 </style>
 </head>
@@ -489,6 +509,7 @@ window.onpopstate = function () {
                     data-observaciones="<?= htmlspecialchars($t['observaciones'] ?? '') ?>"
                     data-propietario="<?= htmlspecialchars($t['propietario']) ?>"
                     data-direccion="<?= htmlspecialchars($t['direccion']) ?>"
+                    data-colonia="<?= htmlspecialchars($t['colonia'] ?? '') ?>"
                     data-localidad="<?= htmlspecialchars($t['localidad']) ?>"
                     data-tramites="<?= htmlspecialchars($t['tipo_tramite_nombre'] ?? 'Sin tipo') ?>"
                     data-fecha="<?= date('d/m/Y', strtotime($t['fecha_ingreso'])) ?>"
@@ -518,10 +539,11 @@ window.onpopstate = function () {
                 <?php if (in_array($t['estatus'], ['Aprobado por Verificador', 'Aprobado']) && $t['tipo_tramite_id'] == 1): ?>
                 <button 
                     class="btn btn-sm btn-success btn-generar-constancia"
-                   
+
                     data-folio="<?= $t['folio_numero'].'/'.$t['folio_anio'] ?>"
                     data-propietario="<?= htmlspecialchars($t['propietario']) ?>"
                     data-direccion="<?= htmlspecialchars($t['direccion']) ?>"
+                    data-colonia="<?= htmlspecialchars($t['colonia'] ?? '') ?>"
                     data-localidad="<?= htmlspecialchars($t['localidad']) ?>"
                     data-numero-asignado="<?= htmlspecialchars($t['numero_asignado'] ?? '') ?>"
                     data-tipo-asignacion="<?= htmlspecialchars($t['tipo_asignacion'] ?? 'Asignacion') ?>"
@@ -532,6 +554,7 @@ window.onpopstate = function () {
                     data-lote="<?= htmlspecialchars($t['lote'] ?? '') ?>"
                     data-fecha-constancia="<?= $t['fecha_constancia'] ?? date('Y-m-d') ?>"
                     data-cuenta-catastral="<?= htmlspecialchars($t['cuenta_catastral'] ?? '') ?>"
+                    data-superficie="<?= htmlspecialchars($t['superficie'] ?? '') ?>"
                     data-croquis="<?= htmlspecialchars(isset($t['croquis_archivo']) && !empty($t['croquis_archivo']) ? (strpos($t['croquis_archivo'], '.') === 0 ? $t['croquis_archivo'] : 'uploads/' . $t['croquis_archivo']) : '') ?>"
                     title="Generar Constancia de Numero Oficial"
                 >
@@ -649,6 +672,7 @@ window.onpopstate = function () {
             <p><strong>Folio:</strong> <span id="m_folio"></span></p>
             <p><strong>Propietario:</strong> <span id="m_propietario"></span></p>
             <p><strong>Dirección:</strong> <span id="m_direccion"></span></p>
+            <p><strong>Colonia:</strong> <span id="m_colonia"></span></p>
             <p><strong>Localidad:</strong> <span id="m_localidad"></span></p>
             <p><strong>Teléfono:</strong> <span id="m_telefono"></span></p>
             <p><strong>Correo:</strong> <span id="m_correo"></span></p>
@@ -979,18 +1003,30 @@ window.onpopstate = function () {
                 <div class="col-md-4">
                     <label class="form-label fw-bold">Tipo <span class="text-danger">*</span></label>
                     <select class="form-select" name="tipo_asignacion" id="c_tipo_asignacion" required>
-                        <option value="ASIGNACION" <?= (isset($t['tipo_asignacion']) && strtoupper($t['tipo_asignacion']) == 'ASIGNACION') ? 'selected' : '' ?>>ASIGNACIÓN</option>
-                        <option value="RECTIFICACION" <?= (isset($t['tipo_asignacion']) && strtoupper($t['tipo_asignacion']) == 'RECTIFICACION') ? 'selected' : '' ?>>RECTIFICACIÓN</option>
-                        <option value="REPOSICION" <?= (isset($t['tipo_asignacion']) && strtoupper($t['tipo_asignacion']) == 'REPOSICION') ? 'selected' : '' ?>>REPOSICIÓN</option>
+                        <option value="ASIGNACION">ASIGNACIÓN</option>
+                        <option value="RECTIFICACION">RECTIFICACIÓN</option>
+                        <option value="REPOSICION">REPOSICIÓN</option>
                     </select>
+                </div>
+                <div class="col-md-8">
+                    <label class="form-label small mt-1">Dirección<span class="text-danger">*</span></label>
+                    <input type="text" class="form-control input-mayusculas" name="direccion_constancia" id="c_direccion_constancia"
+                           value="" pattern="[A-Za-z0-9\s\#\.\-]+"
+                           title="Solo letras, numeros, espacios, #, puntos y guiones" required>
+                    
+                    <label class="form-label small mt-1">Colonia <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control input-mayusculas" name="colonia_constancia" id="c_colonia_constancia"
+                           value="" pattern="[A-Za-z0-9\s\#\.\-]+"
+                           title="Solo letras, numeros, espacios, #, puntos y guiones" required>
+                              <label class="form-label fw-bold">Número Asignado <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control input-mayusculas" name="numero_asignado" id="c_numero_asignado" 
+                         placeholder="Ej: 103" pattern="[A-Za-z0-9\s\-]+" 
+                         title="Solo letras, numeros, espacios y guiones" required>
                 </div>
                 
                 <!-- Numero asignado -->
                 <div class="col-md-4">
-                  <label class="form-label fw-bold">Número Asignado <span class="text-danger">*</span></label>
-                  <input type="text" class="form-control input-mayusculas" name="numero_asignado" id="c_numero_asignado" 
-                         placeholder="Ej: 103" pattern="[A-Za-z0-9\s\-]+" 
-                         title="Solo letras, numeros, espacios y guiones" required>
+               
                 </div>
                 
                 <!-- Referencia anterior -->
@@ -1027,7 +1063,7 @@ window.onpopstate = function () {
                 <div class="col-md-6">
                   <label class="form-label fw-bold">Superficie (m²) <span class="text-danger">*</span></label>
                   <input type="text" class="form-control input-solo-numeros" name="superficie_constancia" id="c_superficie_constancia" 
-                         placeholder="Ej: 250" pattern="[0-9]+" title="Solo numeros" required>
+                         placeholder="Ej: 250" pattern="[0-9]+" title="Solo numeros">
                 </div>
                 
                 <!-- Manzana -->
@@ -1269,8 +1305,8 @@ function guardarConfigConstanciaVer() {
   });
 }
 
-// Función para abrir modal de constancia
-function abrirModalConstancia(btn) {
+    // Función para abrir modal de constancia
+    function abrirModalConstancia(btn) {
     const folio = btn.getAttribute('data-folio');
     const modalConstancia = new bootstrap.Modal(document.getElementById('modalConstancia'));
     
@@ -1278,6 +1314,7 @@ function abrirModalConstancia(btn) {
     document.getElementById('c_folio').textContent = folio;
     document.getElementById('c_propietario').textContent = btn.getAttribute('data-propietario') || '';
     document.getElementById('c_direccion').textContent = btn.getAttribute('data-direccion') || '';
+    document.getElementById('c_colonia_constancia').value = btn.getAttribute('data-colonia') || '';
     document.getElementById('c_localidad').textContent = btn.getAttribute('data-localidad') || '';
     document.getElementById('c_folio_hidden').value = folio;
     document.getElementById('c_numero_asignado').value = btn.getAttribute('data-numero-asignado') || '';
@@ -1299,6 +1336,8 @@ function abrirModalConstancia(btn) {
     document.getElementById('c_entre_calle1').value = btn.getAttribute('data-entre-calle1') || '';
     document.getElementById('c_entre_calle2').value = btn.getAttribute('data-entre-calle2') || '';
     document.getElementById('c_cuenta_catastral').value = btn.getAttribute('data-cuenta-catastral') || '';
+    document.getElementById('c_superficie_constancia').value = btn.getAttribute('data-superficie') || '';
+    document.getElementById('c_direccion_constancia').value = btn.getAttribute('data-direccion') || '';
     document.getElementById('c_manzana').value = btn.getAttribute('data-manzana') || '';
     document.getElementById('c_lote').value = btn.getAttribute('data-lote') || '';
     document.getElementById('c_fecha_constancia').value = btn.getAttribute('data-fecha-constancia') || new Date().toISOString().split('T')[0];
@@ -1325,6 +1364,37 @@ function abrirModalConstancia(btn) {
     
     modalConstancia.show();
 }
+
+// Permitir abrir el modal de constancia desde el modal de detalle (botón "Llenar / imprimir Constancia")
+document.addEventListener('DOMContentLoaded', function() {
+    const btnDesdeDetalle = document.getElementById('btn_abrir_constancia_desde_detalle');
+    if (btnDesdeDetalle) {
+        btnDesdeDetalle.addEventListener('click', function(e) {
+            // Tomar datos visibles en el modal de detalle y pasarlos al modal de constancia
+            const folio = document.getElementById('m_folio').textContent.trim();
+            const propietario = document.getElementById('m_propietario').textContent.trim();
+            const direccion = document.getElementById('m_direccion').textContent.trim();
+            const localidad = document.getElementById('m_localidad').textContent.trim();
+            const tipoTramiteId = document.getElementById('m_tipo_tramite_id') ? document.getElementById('m_tipo_tramite_id').value : '';
+
+            // Poblar campos del modal de constancia
+            document.getElementById('c_folio').textContent = folio;
+            document.getElementById('c_propietario').textContent = propietario;
+            document.getElementById('c_direccion').textContent = direccion;
+            document.getElementById('c_colonia_constancia').value = (document.getElementById('m_colonia') ? document.getElementById('m_colonia').textContent.trim() : '');
+            document.getElementById('c_localidad').textContent = localidad;
+            document.getElementById('c_folio_hidden').value = folio;
+            document.getElementById('c_direccion_constancia').value = direccion;
+            // Si por alguna razón el modal detalle no tiene colonia, intentar leer data-colonia del botón original (no es habitual)
+            const posibleCol = (event && event.relatedTarget) ? (event.relatedTarget.getAttribute('data-colonia') || '') : '';
+            if (!document.getElementById('c_colonia_constancia').value && posibleCol) document.getElementById('c_colonia_constancia').value = posibleCol;
+
+            // Mostrar modal
+            const modalConstancia = new bootstrap.Modal(document.getElementById('modalConstancia'));
+            modalConstancia.show();
+        });
+    }
+});
 
 // Cargar datos de número oficial anterior en modal constancia (verificador)
 function cargarDatosAnterioresVer() {
